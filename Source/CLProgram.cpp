@@ -1,0 +1,105 @@
+#include "CLProgram.h"
+#include <vector>
+
+using namespace std;
+
+CLProgram::CLProgram() : program(nullptr)
+{
+}
+
+CLProgram::~CLProgram()
+{
+    if (this->program)
+    {
+        clReleaseProgram(this->program);
+    }
+}
+
+bool CLProgram::Create(cl_context context, const string& source, const string& options, string& log)
+{
+    size_t size;
+    if (CL_SUCCESS != clGetContextInfo(context, CL_CONTEXT_DEVICES, 0, nullptr, &size))
+    {
+        log = "Failed to get context devices number";
+        return false;
+    }
+
+    vector<cl_device_id> devices(size / sizeof(cl_device_id));
+    if (devices.empty())
+    {
+        log = "No associated devices to context";
+        return false;
+    }
+
+    if (CL_SUCCESS != clGetContextInfo(context, CL_CONTEXT_DEVICES, size, &devices[0], nullptr))
+    {
+        log = "Failed to get context devices";
+        return false;
+    }
+
+    auto s = source.c_str();
+    auto l = source.length();
+    cl_int error;
+
+    this->program = clCreateProgramWithSource(context, 1, &s, &l, &error);
+    if (CL_SUCCESS != error)
+    {
+        log = "Failed to create program";
+        this->program = nullptr;
+        return false;
+    }
+
+    if (CL_SUCCESS != clBuildProgram(this->program, (cl_uint)devices.size(), devices.data(), options.c_str(), nullptr, nullptr))
+    {
+        log = "Failed to build program\n";
+
+        for (auto device : devices)
+        {
+            cl_build_status status;
+            if (CL_SUCCESS != clGetProgramBuildInfo(this->program, device, CL_PROGRAM_BUILD_STATUS, sizeof(status), &status, nullptr))
+            {
+                log += "Failed to get program build status";
+                break;
+            }
+
+            if (CL_BUILD_ERROR == status)
+            {
+                if (CL_SUCCESS != clGetProgramBuildInfo(this->program, device, CL_PROGRAM_BUILD_LOG, 0, nullptr, &size))
+                {
+                    log += "Failed to get program build log length";
+                    break;
+                }
+
+                string err;
+                err.resize(size);
+
+                if (CL_SUCCESS != clGetProgramBuildInfo(this->program, device, CL_PROGRAM_BUILD_LOG, size, &err[0], nullptr))
+                {
+                    log += "Failed to get program build log";
+                    break;
+                }
+
+                err.resize(err.size() - 1);
+                log += err;
+                break;
+            }
+        }
+
+        this->program = nullptr;
+        return false;
+    }
+
+    return true;
+}
+
+bool CLProgram::Create(cl_context context, istream& source, const string& options, string& log)
+{
+    return this->Create(context, string(istreambuf_iterator<char>(source), istreambuf_iterator<char>()), options, log);
+}
+
+CLKernel CLProgram::CreateKernel(const string& name)
+{
+    cl_int error;
+    auto kernel = clCreateKernel(this->program, name.c_str(), &error);
+    return CLKernel(CL_SUCCESS == error ? kernel : nullptr);
+}
