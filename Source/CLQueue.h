@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CLKernel.h"
+#include "CLBuffer.h"
 
 class CLQueue
 {
@@ -15,10 +16,10 @@ public:
 
     bool Create(cl_context, cl_device_id);
     bool Execute(const CLKernel&, bool blocking = true);
-    bool Read(cl_mem, void*, size_t bytes);
-    bool Read(cl_mem, void*, size_t bytes, size_t offset, bool blocking);
-    bool Write(cl_mem, void*, size_t bytes);
-    bool Write(cl_mem, void*, size_t bytes, size_t offset, bool blocking);
+    bool Map(CLBuffer&, void*, bool blocking = true);
+    void Unmap(CLBuffer&);
+    bool Read(const CLBuffer&, void*, size_t bytes, size_t offset = 0, bool blocking = true);
+    bool Write(CLBuffer&, void*, size_t bytes, size_t offset = 0, bool blocking = true);
     void Finish();
 
     operator cl_command_queue() const

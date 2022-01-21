@@ -74,18 +74,22 @@ int main(int, char*[])
     }
     uint32_t dst[sizeof(src) / sizeof(src[0])];
 
-    auto devsrc = context.CreateBuffer(CLBuffer::RO, sizeof(src));
-    auto devdst = context.CreateBuffer(CLBuffer::RW, sizeof(dst));
+    auto devs = context.CreateBuffer(CLBuffer::RO, sizeof(src));
+    auto devd = context.CreateBuffer(CLBuffer::RW, sizeof(dst));
 
-    if (!devsrc || !devdst)
+    if (!devs || !devd)
     {
         cout << "Failed to create buffers" << endl;
         return 0;
     }
+    queue.Map(devs, src);
+    queue.Map(devd, dst);
+    ONCLEANUP(devs, [&]{ queue.Unmap(devs); });
+    ONCLEANUP(devd, [&]{ queue.Unmap(devd); });
 
-    queue.Write(devsrc, src, sizeof(src));
+    queue.Write(devs, src, sizeof(src));
 
-    copy.Args((cl_mem)devsrc, (cl_mem)devdst);
+    copy.Args((cl_mem)devs, (cl_mem)devd);
     copy.Size({ sizeof(src) / sizeof(src[0]) });
     if (!queue.Execute(copy))
     {
@@ -93,7 +97,7 @@ int main(int, char*[])
         return 0;
     }
     
-    queue.Read(devdst, dst, sizeof(dst));
+    queue.Read(devd, dst, sizeof(dst));
 
     return 0;
 }

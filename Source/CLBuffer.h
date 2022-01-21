@@ -15,6 +15,14 @@ public:
     CLBuffer& operator=(CLBuffer&&);
     CLBuffer& operator=(const CLBuffer&) = delete;
 
+    bool Map(cl_command_queue, void*, bool blocking = true);
+    void Unmap(cl_command_queue);
+    
+    void* Mapped() const
+    {
+        return this->map;
+    }
+
     operator cl_mem() const
     {
         return this->mem;
@@ -33,4 +41,5 @@ public:
 
 private:
     cl_mem mem;
+    void*  map;
 };

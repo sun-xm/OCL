@@ -71,24 +71,34 @@ bool CLQueue::Execute(const CLKernel& kernel, bool blocking)
     return true;
 }
 
-bool CLQueue::Read(cl_mem device, void* host, size_t bytes)
+bool CLQueue::Map(CLBuffer& buffer, void* host, bool blocking)
 {
-    return this->Read(device, host, bytes, 0, true);
+    return !!buffer.Map(this->queue, host, blocking);
 }
 
-bool CLQueue::Read(cl_mem device, void* host, size_t bytes, size_t offset, bool blocking)
+void CLQueue::Unmap(CLBuffer& buffer)
 {
-    return CL_SUCCESS == clEnqueueReadBuffer(this->queue, device, blocking ? CL_TRUE : CL_FALSE, offset, bytes, host, 0, nullptr, nullptr);
+    buffer.Unmap(this->queue);
 }
 
-bool CLQueue::Write(cl_mem device, void* host, size_t bytes)
+bool CLQueue::Read(const CLBuffer& buffer, void* host, size_t bytes, size_t offset, bool blocking)
 {
-    return this->Write(device, host, bytes, 0, true);
+    if (buffer.Mapped() == host)
+    {
+        return true;
+    }
+
+    return CL_SUCCESS == clEnqueueReadBuffer(this->queue, buffer, blocking ? CL_TRUE : CL_FALSE, offset, bytes, host, 0, nullptr, nullptr);
 }
 
-bool CLQueue::Write(cl_mem device, void* host, size_t bytes, size_t offset, bool blocking)
+bool CLQueue::Write(CLBuffer& buffer, void* host, size_t bytes, size_t offset, bool blocking)
 {
-    return CL_SUCCESS == clEnqueueWriteBuffer(this->queue, device, blocking ? CL_TRUE : CL_FALSE, 0, bytes, host, 0, nullptr, nullptr);
+    if (buffer.Mapped() == host)
+    {
+        return true;
+    }
+
+    return CL_SUCCESS == clEnqueueWriteBuffer(this->queue, buffer, blocking ? CL_TRUE : CL_FALSE, 0, bytes, host, 0, nullptr, nullptr);
 }
 
 void CLQueue::Finish()
