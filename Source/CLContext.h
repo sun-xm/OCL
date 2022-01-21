@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CLBuffer.h"
 #include "CLDevice.h"
 
 class CLContext
@@ -14,6 +15,8 @@ public:
     CLContext& operator=(const CLContext&) = delete;
 
     bool Create(cl_device_id);
+
+    CLBuffer CreateBuffer(uint64_t flags, size_t bytes);
 
     operator cl_context() const
     {

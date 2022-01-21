@@ -2,13 +2,15 @@
 
 #include <initializer_list>
 #include <exception>
+#include <string>
 #include <vector>
 #include <CL/cl.h>
 
 class CLKernel
 {
-public:
+private:
     CLKernel(cl_kernel);
+public:
     CLKernel(CLKernel&&);
     CLKernel(const CLKernel&) = delete;
    ~CLKernel();
@@ -48,6 +50,9 @@ public:
     {
         return !!this->kernel;
     }
+
+    static CLKernel Create(cl_program, const std::string&);
+
 private:
     template<typename T0>
     bool SetArgs(cl_uint index, const T0& arg0)
@@ -56,7 +61,7 @@ private:
     }
 
     template<typename T0, typename... Tx>
-    bool SetArgs(cl_uint index, const T0& arg0, const Tx... args)
+    bool SetArgs(cl_uint index, const T0& arg0, const Tx&... args)
     {
         if (CL_SUCCESS != clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0))
         {

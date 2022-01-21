@@ -34,6 +34,11 @@ CLContext& CLContext::operator=(CLContext&& other)
 
 bool CLContext::Create(cl_device_id device)
 {
+    if (this->context)
+    {
+        clReleaseContext(this->context);
+    }
+    
     cl_int error;
     this->context = clCreateContext(nullptr, 1, &device, nullptr, nullptr, &error);
 
@@ -44,4 +49,9 @@ bool CLContext::Create(cl_device_id device)
     }
 
     return true;
+}
+
+CLBuffer CLContext::CreateBuffer(uint64_t flags, size_t bytes)
+{
+    return CLBuffer::Create(this->context, flags, bytes);
 }

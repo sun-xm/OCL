@@ -1,6 +1,9 @@
 #include "CLPlatform.h"
 #include "CLProgram.h"
+#include "CLBuffer.h"
 #include "CLQueue.h"
+#include "Common.h"
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 
@@ -35,6 +38,13 @@ int main(int, char*[])
         return 0;
     }
 
+    CLQueue queue;
+    if (!queue.Create(context, device))
+    {
+        cout << "Failed to create command queue" << endl;
+        return 0;
+    }
+
     ifstream source("build/Program.cl");
     if (!source.is_open())
     {
@@ -42,29 +52,48 @@ int main(int, char*[])
         return 0;
     }
 
-    CLProgram program;
     string log;
+    CLProgram program;
     if (!program.Create(context, source, "", log))
     {
         cout << log << endl;
         return 0;
     }
 
-    CLKernel kernel = program.CreateKernel("Test");
-    if (!kernel)
+    CLKernel copy = program.CreateKernel("Copy");
+    if (!copy)
     {
         cout << "Failed to create kernel" << endl;
         return 0;
     }
-    kernel.Size({ 32, 32 });
 
-    CLQueue queue;
-    if (!queue.Create(context, device))
+    uint32_t src[128];
+    for (uint32_t i = 0; i < (uint32_t)(sizeof(src) / sizeof(src[0])); i++)
     {
-        cout << "Failed to create command queue" << endl;
+        src[i] = i;
+    }
+    uint32_t dst[sizeof(src) / sizeof(src[0])];
+
+    auto devsrc = context.CreateBuffer(CLBuffer::RO, sizeof(src));
+    auto devdst = context.CreateBuffer(CLBuffer::RW, sizeof(dst));
+
+    if (!devsrc || !devdst)
+    {
+        cout << "Failed to create buffers" << endl;
         return 0;
     }
-    queue.Enqueue(kernel);
+
+    queue.Write(devsrc, src, sizeof(src));
+
+    copy.Args((cl_mem)devsrc, (cl_mem)devdst);
+    copy.Size({ sizeof(src) / sizeof(src[0]) });
+    if (!queue.Execute(copy))
+    {
+        cout << "Failed to enqueue kernel";
+        return 0;
+    }
+    
+    queue.Read(devdst, dst, sizeof(dst));
 
     return 0;
 }

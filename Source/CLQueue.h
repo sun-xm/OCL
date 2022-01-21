@@ -14,7 +14,17 @@ public:
     CLQueue& operator=(const CLQueue&) = delete;
 
     bool Create(cl_context, cl_device_id);
-    bool Enqueue(const CLKernel&);
+    bool Execute(const CLKernel&, bool blocking = true);
+    bool Read(cl_mem, void*, size_t bytes);
+    bool Read(cl_mem, void*, size_t bytes, size_t offset, bool blocking);
+    bool Write(cl_mem, void*, size_t bytes);
+    bool Write(cl_mem, void*, size_t bytes, size_t offset, bool blocking);
+    void Finish();
+
+    operator cl_command_queue() const
+    {
+        return this->queue;
+    }
 
 private:
     cl_command_queue queue;

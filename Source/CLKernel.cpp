@@ -37,3 +37,10 @@ void CLKernel::Size(const initializer_list<size_t>& global, const initializer_li
     this->global = global;
     this->local  = local;
 }
+
+CLKernel CLKernel::Create(cl_program program, const string& name)
+{
+    cl_int error;
+    auto kernel = clCreateKernel(program, name.c_str(), &error);
+    return CLKernel(CL_SUCCESS == error ? kernel : nullptr);
+}

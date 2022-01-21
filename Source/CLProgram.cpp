@@ -117,7 +117,5 @@ bool CLProgram::Create(cl_context context, istream& source, const string& option
 
 CLKernel CLProgram::CreateKernel(const string& name)
 {
-    cl_int error;
-    auto kernel = clCreateKernel(this->program, name.c_str(), &error);
-    return CLKernel(CL_SUCCESS == error ? kernel : nullptr);
+    return CLKernel::Create(this->program, name);
 }
