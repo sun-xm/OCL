@@ -1,10 +1,16 @@
 #include "CLProgram.h"
 #include <vector>
+#include <utility>
 
 using namespace std;
 
 CLProgram::CLProgram() : program(nullptr)
 {
+}
+
+CLProgram::CLProgram(CLProgram&& other)
+{
+    *this = move(other);
 }
 
 CLProgram::~CLProgram()
@@ -13,6 +19,18 @@ CLProgram::~CLProgram()
     {
         clReleaseProgram(this->program);
     }
+}
+
+CLProgram& CLProgram::operator=(CLProgram&& other)
+{
+    if (this->program)
+    {
+        clReleaseProgram(this->program);
+    }
+
+    this->program = other.program;
+    other.program = nullptr;
+    return *this;
 }
 
 bool CLProgram::Create(cl_context context, const string& source, const string& options, string& log)

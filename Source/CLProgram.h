@@ -9,7 +9,12 @@ class CLProgram
 {
 public:
     CLProgram();
+    CLProgram(CLProgram&&);
+    CLProgram(const CLProgram&) = delete;
    ~CLProgram();
+
+    CLProgram& operator=(CLProgram&&);
+    CLProgram& operator=(const CLProgram&) = delete;
 
     bool Create(cl_context, const std::string&, const std::string& options = std::string(), std::string& log = std::string());
     bool Create(cl_context, std::istream&, const std::string& options = std::string(), std::string& log = std::string());

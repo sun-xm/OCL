@@ -1,5 +1,6 @@
 #include "CLPlatform.h"
 #include "CLProgram.h"
+#include "CLQueue.h"
 #include <fstream>
 #include <iostream>
 
@@ -55,6 +56,15 @@ int main(int, char*[])
         cout << "Failed to create kernel" << endl;
         return 0;
     }
+    kernel.Size({ 32, 32 });
+
+    CLQueue queue;
+    if (!queue.Create(context, device))
+    {
+        cout << "Failed to create command queue" << endl;
+        return 0;
+    }
+    queue.Enqueue(kernel);
 
     return 0;
 }

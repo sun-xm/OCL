@@ -1,6 +1,8 @@
 #pragma once
 
+#include <initializer_list>
 #include <exception>
+#include <vector>
 #include <CL/cl.h>
 
 class CLKernel
@@ -11,18 +13,25 @@ public:
     CLKernel(const CLKernel&) = delete;
    ~CLKernel();
 
-    CLKernel& operator=(CLKernel&& other)
-    {
-        if (this->kernel)
-        {
-            clReleaseKernel(this->kernel);
-        }
-
-        this->kernel = other.kernel;
-        other.kernel = nullptr;
-        return *this;
-    }
+    CLKernel& operator=(CLKernel&&);
     CLKernel& operator=(const CLKernel&) = delete;
+
+    void Size(const std::initializer_list<size_t>& global, const std::initializer_list<size_t>& local = {});
+
+    const size_t* Global() const
+    {
+        return this->global.empty() ? nullptr : this->global.data();
+    }
+    
+    const size_t* Local() const
+    {
+        return this->local.empty() ? nullptr : this->local.data();
+    }
+    
+    cl_uint Dims() const
+    {
+        return (cl_uint)this->global.size();
+    }
 
     template<typename T0, typename... Tx>
     bool Args(const T0& arg0, const Tx&... args)
@@ -59,4 +68,6 @@ private:
 
 private:
     cl_kernel kernel;
+    std::vector<size_t> global;
+    std::vector<size_t> local;
 };

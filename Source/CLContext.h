@@ -6,7 +6,12 @@ class CLContext
 {
 public:
     CLContext();
+    CLContext(CLContext&&);
+    CLContext(const CLContext&) = delete;
    ~CLContext();
+
+    CLContext& operator=(CLContext&&);
+    CLContext& operator=(const CLContext&) = delete;
 
     bool Create(cl_device_id);
 
