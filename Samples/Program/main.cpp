@@ -76,17 +76,15 @@ int main(int, char*[])
 
     auto devs = context.CreateBuffer(CLBuffer::RO, sizeof(src));
     auto devd = context.CreateBuffer(CLBuffer::RW, sizeof(dst));
-
+    
     if (!devs || !devd)
     {
         cout << "Failed to create buffers" << endl;
         return 0;
     }
+
     queue.Map(devs, src);
     queue.Map(devd, dst);
-    ONCLEANUP(devs, [&]{ queue.Unmap(devs); });
-    ONCLEANUP(devd, [&]{ queue.Unmap(devd); });
-
     queue.Write(devs, src, sizeof(src));
 
     copy.Args((cl_mem)devs, (cl_mem)devd);

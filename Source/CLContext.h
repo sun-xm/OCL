@@ -8,11 +8,11 @@ class CLContext
 public:
     CLContext();
     CLContext(CLContext&&);
-    CLContext(const CLContext&) = delete;
+    CLContext(const CLContext&);
    ~CLContext();
 
     CLContext& operator=(CLContext&&);
-    CLContext& operator=(const CLContext&) = delete;
+    CLContext& operator=(const CLContext&);
 
     bool Create(cl_device_id);
 

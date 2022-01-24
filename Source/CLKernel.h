@@ -12,11 +12,11 @@ private:
     CLKernel(cl_kernel);
 public:
     CLKernel(CLKernel&&);
-    CLKernel(const CLKernel&) = delete;
+    CLKernel(const CLKernel&);
    ~CLKernel();
 
     CLKernel& operator=(CLKernel&&);
-    CLKernel& operator=(const CLKernel&) = delete;
+    CLKernel& operator=(const CLKernel&);
 
     void Size(const std::initializer_list<size_t>& global, const std::initializer_list<size_t>& local = {});
 

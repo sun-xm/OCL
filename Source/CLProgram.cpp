@@ -13,6 +13,11 @@ CLProgram::CLProgram(CLProgram&& other)
     *this = move(other);
 }
 
+CLProgram::CLProgram(const CLProgram& other) : program(nullptr)
+{
+    *this = other;
+}
+
 CLProgram::~CLProgram()
 {
     if (this->program)
@@ -30,6 +35,22 @@ CLProgram& CLProgram::operator=(CLProgram&& other)
 
     this->program = other.program;
     other.program = nullptr;
+    return *this;
+}
+
+CLProgram& CLProgram::operator=(const CLProgram& other)
+{
+    if (other.program && CL_SUCCESS != clRetainProgram(other.program))
+    {
+        throw runtime_error("Failed to retain program");
+    }
+
+    if (this->program)
+    {
+        clReleaseProgram(this->program);
+    }
+
+    this->program = other.program;
     return *this;
 }
 

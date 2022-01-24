@@ -12,6 +12,11 @@ CLQueue::CLQueue(CLQueue&& other)
     *this = move(other);
 }
 
+CLQueue::CLQueue(const CLQueue& other) : queue(nullptr)
+{
+    *this = other;
+}
+
 CLQueue::~CLQueue()
 {
     if (this->queue)
@@ -29,6 +34,22 @@ CLQueue& CLQueue::operator=(CLQueue&& other)
 
     this->queue = other.queue;
     other.queue = nullptr;
+    return *this;
+}
+
+CLQueue& CLQueue::operator=(const CLQueue& other)
+{
+    if (other.queue && CL_SUCCESS != clRetainCommandQueue(other.queue))
+    {
+        throw runtime_error("Failed to retain queue");
+    }
+
+    if (this->queue)
+    {
+        clReleaseCommandQueue(this->queue);
+    }
+
+    this->queue = other.queue;
     return *this;
 }
 
@@ -76,16 +97,16 @@ bool CLQueue::Map(CLBuffer& buffer, void* host, bool blocking)
     return !!buffer.Map(this->queue, host, blocking);
 }
 
-void CLQueue::Unmap(CLBuffer& buffer)
-{
-    buffer.Unmap(this->queue);
-}
-
 bool CLQueue::Read(const CLBuffer& buffer, void* host, size_t bytes, size_t offset, bool blocking)
 {
-    if (buffer.Mapped() == host)
+    if (buffer.Mapped())
     {
-        return true;
+        if (buffer.Mapped() == host)
+        {
+            return true;
+        }
+
+        memcpy(host, ((char*)buffer.Mapped() + offset), bytes);
     }
 
     return CL_SUCCESS == clEnqueueReadBuffer(this->queue, buffer, blocking ? CL_TRUE : CL_FALSE, offset, bytes, host, 0, nullptr, nullptr);
@@ -93,12 +114,18 @@ bool CLQueue::Read(const CLBuffer& buffer, void* host, size_t bytes, size_t offs
 
 bool CLQueue::Write(CLBuffer& buffer, void* host, size_t bytes, size_t offset, bool blocking)
 {
-    if (buffer.Mapped() == host)
+    if (buffer.Mapped())
     {
+        if (buffer.Mapped() == host)
+        {
+            return true;
+        }
+
+        memcpy(((char*)buffer.Mapped() + offset), host, bytes);
         return true;
     }
 
-    return CL_SUCCESS == clEnqueueWriteBuffer(this->queue, buffer, blocking ? CL_TRUE : CL_FALSE, 0, bytes, host, 0, nullptr, nullptr);
+    return CL_SUCCESS == clEnqueueWriteBuffer(this->queue, buffer, blocking ? CL_TRUE : CL_FALSE, offset, bytes, host, 0, nullptr, nullptr);
 }
 
 void CLQueue::Finish()
