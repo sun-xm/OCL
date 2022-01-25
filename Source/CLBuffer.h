@@ -1,7 +1,8 @@
 #pragma once
 
+#include "CLEvent.h"
 #include <cstdint>
-#include <CL/cl.h>
+#include <initializer_list>
 
 class CLBuffer
 {
@@ -15,8 +16,18 @@ public:
     CLBuffer& operator=(CLBuffer&&);
     CLBuffer& operator=(const CLBuffer&);
 
-    bool Map(cl_command_queue, void*, bool blocking = true);
-    void Unmap();
+    CLEvent& Event() const
+    {
+        return this->event;
+    }
+    operator CLEvent&() const
+    {
+        return this->event;
+    }
+
+    bool Map(cl_command_queue, void*);
+    bool Map(cl_command_queue, void*, const std::initializer_list<CLEvent>& waitList);
+    void Unmap(const std::initializer_list<CLEvent>& waitList = {});
     
     void* Mapped() const
     {
@@ -43,4 +54,6 @@ private:
     cl_mem mem;
     void*  map;
     cl_command_queue que;
+
+    mutable CLEvent event;
 };

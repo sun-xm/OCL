@@ -2,6 +2,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 using namespace std;
 
@@ -61,7 +62,18 @@ CLBuffer& CLBuffer::operator=(const CLBuffer& other)
     return *this;
 }
 
-bool CLBuffer::Map(cl_command_queue queue, void* host, bool blocking)
+bool CLBuffer::Map(cl_command_queue queue, void* host)
+{
+    if (!this->Map(queue, host, {}))
+    {
+        return false;
+    }
+
+    this->event.Wait();
+    return true;
+}
+
+bool CLBuffer::Map(cl_command_queue queue, void* host, const initializer_list<CLEvent>& waitList)
 {
     cl_mem_flags flags;
     if (CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_FLAGS, sizeof(flags), &flags, nullptr))
@@ -75,7 +87,8 @@ bool CLBuffer::Map(cl_command_queue queue, void* host, bool blocking)
         return false;
     }
 
-    this->Unmap();
+    this->Unmap(waitList);
+    this->event.Wait();
 
     if (CL_SUCCESS != clRetainCommandQueue(queue))
     {
@@ -97,23 +110,50 @@ bool CLBuffer::Map(cl_command_queue queue, void* host, bool blocking)
         f = CL_MAP_READ | CL_MAP_WRITE;
     }
 
-    cl_int error;
-    this->map = clEnqueueMapBuffer(this->que, this->mem, blocking ? CL_TRUE : CL_FALSE, f, 0, bytes, 0, nullptr, nullptr, &error);
+    vector<cl_event> events;
+    for (auto& e : waitList)
+    {
+        if (e)
+        {
+            events.push_back(e);
+        }
+    }
 
+    cl_int error;
+    cl_event event;
+    this->map = clEnqueueMapBuffer(this->que, this->mem, CL_FALSE, f, 0, bytes, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &error);
+
+    this->event = CLEvent(event);
     return CL_SUCCESS == error;
 }
 
-void CLBuffer::Unmap()
+void CLBuffer::Unmap(const initializer_list<CLEvent>& waitList)
 {
     if (this->map)
     {
         assert(this->que);
 
-        auto error = clEnqueueUnmapMemObject(this->que, this->mem, this->map, 0, nullptr, nullptr);
+        vector<cl_event> events;
+        for (auto& e : waitList)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        cl_event event;
+        auto error = clEnqueueUnmapMemObject(this->que, this->mem, this->map, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
         assert(CL_SUCCESS == error);
         error = clReleaseCommandQueue(this->que);
         assert(CL_SUCCESS == error);
         this->que = nullptr;
+
+        this->event = CLEvent(event);
+    }
+    else
+    {
+        this->event = CLEvent();
     }
 }
 

@@ -6,7 +6,8 @@ set(SOURCE_CPP ${SOURCE_DIR}/CLPlatform.cpp
                ${SOURCE_DIR}/CLProgram.cpp
                ${SOURCE_DIR}/CLKernel.cpp
                ${SOURCE_DIR}/CLQueue.cpp
-               ${SOURCE_DIR}/CLBuffer.cpp)
+               ${SOURCE_DIR}/CLBuffer.cpp
+               ${SOURCE_DIR}/CLEvent.cpp)
 
 include_directories($ENV{OPENCL_PATH}include ${SOURCE_DIR})
 link_directories($ENV{OPENCL_PATH}lib/$(PlatformShortName))
@@ -16,3 +17,4 @@ add_compile_definitions(CL_TARGET_OPENCL_VERSION=220)
 add_subdirectory(Samples/Device   Device)
 add_subdirectory(Samples/Platform Platform)
 add_subdirectory(Samples/Program  Program)
+add_subdirectory(Samples/Event    Event)

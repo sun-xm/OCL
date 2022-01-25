@@ -1,10 +1,10 @@
 #pragma once
 
+#include "CLEvent.h"
 #include <initializer_list>
 #include <exception>
 #include <string>
 #include <vector>
-#include <CL/cl.h>
 
 class CLKernel
 {
@@ -18,6 +18,15 @@ public:
     CLKernel& operator=(CLKernel&&);
     CLKernel& operator=(const CLKernel&);
 
+    CLEvent& Event() const
+    {
+        return this->event;
+    }
+    operator CLEvent&() const
+    {
+        return this->event;
+    }
+    
     void Size(const std::initializer_list<size_t>& global, const std::initializer_list<size_t>& local = {});
 
     const size_t* Global() const
@@ -75,4 +84,6 @@ private:
     cl_kernel kernel;
     std::vector<size_t> global;
     std::vector<size_t> local;
+
+    mutable CLEvent event;
 };
