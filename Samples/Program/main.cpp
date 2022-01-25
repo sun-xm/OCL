@@ -87,7 +87,7 @@ int main(int, char*[])
     queue.Map(devd, dst);
     queue.Write(devs, src, sizeof(src));
 
-    copy.Args((cl_mem)devs, (cl_mem)devd);
+    copy.Args(devs, devd);
     copy.Size({ sizeof(src) / sizeof(src[0]) });
     if (!queue.Execute(copy))
     {

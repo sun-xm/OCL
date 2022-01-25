@@ -95,8 +95,8 @@ int main(int, char*[])
         mapped[i] = i;
     }
 
-    copy0.Args((cl_mem)a0, (cl_mem)a1);
-    copy1.Args((cl_mem)a1, (cl_mem)a2);
+    copy0.Args(a0, a1);
+    copy1.Args(a1, a2);
     copy0.Size({ SIZE });
     copy1.Size({ SIZE });
 
