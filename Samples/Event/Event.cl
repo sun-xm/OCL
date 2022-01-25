@@ -1,12 +1,12 @@
 __kernel
-void Copy0(__global const uchar* src, __global uchar* dst)
+void Init(__global uint* arr)
 {
     size_t idx = get_global_id(0);
-    dst[idx] = src[idx];
+    arr[idx] = (uint)idx;
 }
 
 __kernel
-void Copy1(__global const uchar* src, __global uchar* dst)
+void Copy(__global const uint* src, __global uint* dst)
 {
     size_t idx = get_global_id(0);
     dst[idx] = src[idx];

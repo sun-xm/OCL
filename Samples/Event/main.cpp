@@ -7,8 +7,6 @@
 #include <fstream>
 #include <iostream>
 
-#define SIZE    (128)
-
 #pragma comment(lib, "OpenCL.lib")
 
 using namespace std;
@@ -62,56 +60,50 @@ int main(int, char*[])
         return 0;
     }
 
-    CLKernel copy0 = program.CreateKernel("Copy0");
-    CLKernel copy1 = program.CreateKernel("Copy1");
-    if (!copy0 || !copy1)
+    CLKernel init = program.CreateKernel("Init");
+    CLKernel copy = program.CreateKernel("Copy");
+    if (!init || !copy)
     {
         cout << "Failed to create kernel" << endl;
         return 0;
     }
 
-    auto a0 = context.CreateBuffer(CLBuffer::RO, SIZE);
-    auto a1 = context.CreateBuffer(CLBuffer::RW, SIZE);
-    auto a2 = context.CreateBuffer(CLBuffer::RW, SIZE);
-    
-    if (!a0 || !a1 || !a2)
-    {
-        cout << "Failed to create buffers" << endl;
-        return 0;
-    }
+    auto src = context.CreateBuffer(CLBuffer::RW, 128 * sizeof(uint32_t));
+    auto dst = context.CreateBuffer(CLBuffer::RO, src.Length());
 
-    if (!queue.Map(a0))
-    {
-        cout << "Failed to map a0" << endl;
-        return 0;
-    }
-
-    auto mapped = (uint8_t*)a0.Mapped();
-    for (uint8_t i = 0; i < SIZE; i++)
-    {
-        mapped[i] = i;
-    }
-
-    copy0.Args(a0, a1);
-    copy1.Args(a1, a2);
-    copy0.Size({ SIZE });
-    copy1.Size({ SIZE });
-
-    if (!queue.Execute(copy0, {}) ||
-        !queue.Execute(copy1, { copy0 }))
-    {
-        cout << "Failed to execute kernel" << endl;
-        return 0;
-    }
-
-    if (!queue.Map(a2, { copy1 }))
+    if (!queue.Map(src))
     {
         cout << "Failed to map buffer" << endl;
+        return 0;
     }
-    a2.Event().Wait();
 
-    mapped = (uint8_t*)a2.Mapped();
-    cout << (int)mapped[0] << ' ' << (int)mapped[1] << ' ' << (int)mapped[2] << endl;
+    init.Args(src);
+    init.Size({ src.Length() / sizeof(uint32_t) });
+
+    if (!queue.Execute(init))
+    {
+        cout << "Failed to execute init" << endl;
+        return 0;
+    }
+
+    copy.Args(src, dst);
+    copy.Size( { src.Length() / sizeof(uint32_t) });
+
+    if (!queue.Execute(copy, { init }))
+    {
+        cout << "Failed to execute copy" << endl;
+        return 0;
+    }
+
+    if (!queue.Map(dst, { copy }))
+    {
+        cout << "Failed to map buffer" << endl;
+        return 0;
+    }
+    dst.Event().Wait();
+
+    auto mapped = (uint32_t*)dst.Mapped();
+    cout << mapped[0] << ' ' << mapped[1] << ' ' << mapped[2] << endl;
 
     return 0;
 }
