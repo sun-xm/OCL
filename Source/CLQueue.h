@@ -17,8 +17,8 @@ public:
     bool Create(cl_context, cl_device_id);
     bool Execute(const CLKernel&);
     bool Execute(const CLKernel&, const std::initializer_list<CLEvent>&);
-    bool Map(CLBuffer&, void*);
-    bool Map(CLBuffer&, void*, const std::initializer_list<CLEvent>&);
+    bool Map(CLBuffer&);
+    bool Map(CLBuffer&, const std::initializer_list<CLEvent>&);
     bool Read(const CLBuffer&, void*, size_t bytes, size_t offset = 0);
     bool Read(const CLBuffer&, void*, size_t bytes, size_t offset, const std::initializer_list<CLEvent>&);
     bool Write(CLBuffer&, void*, size_t bytes, size_t offset = 0);

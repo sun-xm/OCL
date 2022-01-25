@@ -80,10 +80,7 @@ int main(int, char*[])
         return 0;
     }
 
-    uint8_t src[SIZE];
-    uint8_t dst[SIZE];
-
-    if (!queue.Map(a0, src))
+    if (!queue.Map(a0))
     {
         cout << "Failed to map a0" << endl;
         return 0;
@@ -107,9 +104,14 @@ int main(int, char*[])
         return 0;
     }
 
-    queue.Map(a2, dst, { copy1 });
-    queue.Read(a2, dst, SIZE, 0, { a2 });
+    if (!queue.Map(a2, { copy1 }))
+    {
+        cout << "Failed to map buffer" << endl;
+    }
     a2.Event().Wait();
+
+    mapped = (uint8_t*)a2.Mapped();
+    cout << (int)mapped[0] << ' ' << (int)mapped[1] << ' ' << (int)mapped[2] << endl;
 
     return 0;
 }

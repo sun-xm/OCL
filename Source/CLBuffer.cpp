@@ -62,9 +62,9 @@ CLBuffer& CLBuffer::operator=(const CLBuffer& other)
     return *this;
 }
 
-bool CLBuffer::Map(cl_command_queue queue, void* host)
+bool CLBuffer::Map(cl_command_queue queue)
 {
-    if (!this->Map(queue, host, {}))
+    if (!this->Map(queue, {}))
     {
         return false;
     }
@@ -73,7 +73,7 @@ bool CLBuffer::Map(cl_command_queue queue, void* host)
     return true;
 }
 
-bool CLBuffer::Map(cl_command_queue queue, void* host, const initializer_list<CLEvent>& waitList)
+bool CLBuffer::Map(cl_command_queue queue, const initializer_list<CLEvent>& waitList)
 {
     cl_mem_flags flags;
     if (CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_FLAGS, sizeof(flags), &flags, nullptr))
@@ -155,6 +155,20 @@ void CLBuffer::Unmap(const initializer_list<CLEvent>& waitList)
     {
         this->event = CLEvent();
     }
+}
+
+size_t CLBuffer::Length() const
+{
+    if (!this->mem)
+    {
+        return 0;
+    }
+
+    size_t length;
+    auto error = clGetMemObjectInfo(this->mem, CL_MEM_SIZE, sizeof(length), &length, nullptr);
+    assert(CL_SUCCESS == error);
+
+    return length;
 }
 
 CLBuffer CLBuffer::Create(cl_context context, uint64_t flags, size_t bytes)

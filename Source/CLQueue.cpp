@@ -111,14 +111,14 @@ bool CLQueue::Execute(const CLKernel& kernel, const initializer_list<CLEvent>& w
     return true;
 }
 
-bool CLQueue::Map(CLBuffer& buffer, void* host)
+bool CLQueue::Map(CLBuffer& buffer)
 {
-    return buffer.Map(this->queue, host);
+    return buffer.Map(this->queue);
 }
 
-bool CLQueue::Map(CLBuffer& buffer, void* host, const initializer_list<CLEvent>& waitList)
+bool CLQueue::Map(CLBuffer& buffer, const initializer_list<CLEvent>& waitList)
 {
-    return buffer.Map(this->queue, host, waitList);
+    return buffer.Map(this->queue, waitList);
 }
 
 bool CLQueue::Read(const CLBuffer& buffer, void* host, size_t bytes, size_t offset)

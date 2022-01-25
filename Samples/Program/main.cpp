@@ -9,6 +9,8 @@
 
 #pragma comment(lib, "OpenCL.lib")
 
+#define SIZE    (128)
+
 using namespace std;
 
 int main(int, char*[])
@@ -67,35 +69,37 @@ int main(int, char*[])
         return 0;
     }
 
-    uint32_t src[128];
-    for (uint32_t i = 0; i < (uint32_t)(sizeof(src) / sizeof(src[0])); i++)
-    {
-        src[i] = i;
-    }
-    uint32_t dst[sizeof(src) / sizeof(src[0])];
+    auto src = context.CreateBuffer(CLBuffer::RO, SIZE);
+    auto dst = context.CreateBuffer(CLBuffer::RW, src.Length());
 
-    auto devs = context.CreateBuffer(CLBuffer::RO, sizeof(src));
-    auto devd = context.CreateBuffer(CLBuffer::RW, sizeof(dst));
-    
-    if (!devs || !devd)
+    if (!queue.Map(src))
     {
-        cout << "Failed to create buffers" << endl;
+        cout << "Failed to map buffer";
         return 0;
     }
 
-    queue.Map(devs, src);
-    queue.Map(devd, dst);
-    queue.Write(devs, src, sizeof(src));
+    auto mapped = (uint8_t*)src.Mapped();
+    for (size_t i = 0; i < src.Length(); i++)
+    {
+        mapped[i] = (uint8_t)i;
+    }
 
-    copy.Args(devs, devd);
-    copy.Size({ sizeof(src) / sizeof(src[0]) });
+    copy.Args(src, dst);
+    copy.Size({ src.Length() });
     if (!queue.Execute(copy))
     {
-        cout << "Failed to enqueue kernel";
+        cout << "Failed to enqueue kernel" << endl;
         return 0;
     }
-    
-    queue.Read(devd, dst, sizeof(dst));
+
+    if (!queue.Map(dst))
+    {
+        cout << "Failed to map buffer" << endl;
+        return 0;
+    }
+
+    mapped = (uint8_t*)dst.Mapped();
+    cout << (int)mapped[0] << ' ' << (int)mapped[1] << ' ' << (int)mapped[2] << endl;
 
     return 0;
 }

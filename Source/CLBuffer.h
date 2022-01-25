@@ -25,9 +25,11 @@ public:
         return this->event;
     }
 
-    bool Map(cl_command_queue, void*);
-    bool Map(cl_command_queue, void*, const std::initializer_list<CLEvent>& waitList);
+    bool Map(cl_command_queue);
+    bool Map(cl_command_queue, const std::initializer_list<CLEvent>& waitList);
     void Unmap(const std::initializer_list<CLEvent>& waitList = {});
+
+    size_t Length() const;
     
     void* Mapped() const
     {
