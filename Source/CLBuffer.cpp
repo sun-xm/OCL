@@ -1,4 +1,5 @@
 #include "CLBuffer.h"
+#include "Common.h"
 #include <cassert>
 #include <stdexcept>
 #include <utility>
@@ -10,8 +11,12 @@ uint64_t CLBuffer::RO = CL_MEM_READ_ONLY;
 uint64_t CLBuffer::WO = CL_MEM_WRITE_ONLY;
 uint64_t CLBuffer::RW = CL_MEM_READ_WRITE;
 
-CLBuffer::CLBuffer(cl_mem mem) : mem(mem), map(nullptr), que(nullptr)
+CLBuffer::CLBuffer(cl_mem mem) : mem(nullptr), map(nullptr), que(nullptr)
 {
+    if (mem && CL_SUCCESS == clRetainMemObject(mem))
+    {
+        this->mem = mem;
+    }
 }
 
 CLBuffer::CLBuffer(CLBuffer&& other)
@@ -19,7 +24,7 @@ CLBuffer::CLBuffer(CLBuffer&& other)
     *this = move(other);
 }
 
-CLBuffer::CLBuffer(const CLBuffer& other) : mem(nullptr), map(nullptr)
+CLBuffer::CLBuffer(const CLBuffer& other) : CLBuffer(nullptr)
 {
     *this = other;
 }
@@ -124,6 +129,7 @@ bool CLBuffer::Map(cl_command_queue queue, const initializer_list<CLEvent>& wait
     this->map = clEnqueueMapBuffer(this->que, this->mem, CL_FALSE, f, 0, bytes, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &error);
 
     this->event = CLEvent(event);
+    clReleaseEvent(event);
     return CL_SUCCESS == error;
 }
 
@@ -150,6 +156,7 @@ void CLBuffer::Unmap(const initializer_list<CLEvent>& waitList)
         this->que = nullptr;
 
         this->event = CLEvent(event);
+        clReleaseEvent(event);
     }
     else
     {
@@ -175,5 +182,6 @@ CLBuffer CLBuffer::Create(cl_context context, uint64_t flags, size_t bytes)
 {
     cl_int error;
     auto buffer = clCreateBuffer(context, flags, bytes, nullptr, &error);
-    return CLBuffer(CL_SUCCESS == error ? buffer : nullptr);
+    ONCLEANUP(buffer, [=]{ if (buffer) clReleaseMemObject(buffer); });
+    return CLBuffer(buffer);
 }

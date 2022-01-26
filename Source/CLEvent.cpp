@@ -5,8 +5,12 @@
 
 using namespace std;
 
-CLEvent::CLEvent(cl_event event) : event(event)
+CLEvent::CLEvent(cl_event event) : event(nullptr)
 {
+    if (event && CL_SUCCESS == clRetainEvent(event))
+    {
+        this->event = event;
+    }
 }
 
 CLEvent::CLEvent(CLEvent&& other)
@@ -14,7 +18,7 @@ CLEvent::CLEvent(CLEvent&& other)
     *this = move(other);
 }
 
-CLEvent::CLEvent(const CLEvent& other) : event(nullptr)
+CLEvent::CLEvent(const CLEvent& other) : CLEvent(nullptr)
 {
     *this = other;
 }

@@ -1,10 +1,15 @@
 #include "CLQueue.h"
+#include "Common.h"
 #include <utility>
 
 using namespace std;
 
-CLQueue::CLQueue() : queue(nullptr)
+CLQueue::CLQueue(cl_command_queue queue) : queue(nullptr)
 {
+    if (queue && CL_SUCCESS == clRetainCommandQueue(queue))
+    {
+        this->queue = queue;
+    }
 }
 
 CLQueue::CLQueue(CLQueue&& other)
@@ -12,7 +17,7 @@ CLQueue::CLQueue(CLQueue&& other)
     *this = move(other);
 }
 
-CLQueue::CLQueue(const CLQueue& other) : queue(nullptr)
+CLQueue::CLQueue(const CLQueue& other) : CLQueue(nullptr)
 {
     *this = other;
 }
@@ -53,29 +58,6 @@ CLQueue& CLQueue::operator=(const CLQueue& other)
     return *this;
 }
 
-bool CLQueue::Create(cl_context context, cl_device_id device)
-{
-    if (this->queue)
-    {
-        clReleaseCommandQueue(this->queue);
-    }
-
-    cl_int error;
-#if CL_TARGET_OPENCL_VERSION >= 200
-    this->queue = clCreateCommandQueueWithProperties(context, device, nullptr, &error);
-#else
-    this->queue = clCreateCommandQueue(context, device, 0, &error);
-#endif
-
-    if (CL_SUCCESS != error)
-    {
-        this->queue = nullptr;
-        return false;
-    }
-
-    return true;
-}
-
 bool CLQueue::Execute(const CLKernel& kernel)
 {
     cl_event event;
@@ -86,6 +68,7 @@ bool CLQueue::Execute(const CLKernel& kernel)
     }
     
     kernel.Event() = CLEvent(event);
+    clReleaseEvent(event);
     kernel.Event().Wait();
     return true;
 }
@@ -108,6 +91,7 @@ bool CLQueue::Execute(const CLKernel& kernel, const initializer_list<CLEvent>& w
     }
 
     kernel.Event() = CLEvent(event);
+    clReleaseEvent(event);
     return true;
 }
 
@@ -161,6 +145,7 @@ bool CLQueue::Read(const CLBuffer& buffer, void* host, size_t bytes, size_t offs
     }
 
     buffer.Event() = CLEvent(event);
+    clReleaseEvent(event);
     return true;
 }
 
@@ -204,10 +189,37 @@ bool CLQueue::Write(CLBuffer& buffer, void* host, size_t bytes, size_t offset, c
     }
 
     buffer.Event() = CLEvent(event);
+    clReleaseEvent(event);
     return true;
 }
 
 void CLQueue::Finish()
 {
     clFinish(this->queue);
+}
+
+CLQueue CLQueue::Create(cl_context context, cl_device_id device)
+{
+    if (!device)
+    {
+        cl_uint num;
+        if (CL_SUCCESS != clGetContextInfo(context, CL_CONTEXT_NUM_DEVICES, sizeof(num), &num, nullptr) || !num)
+        {
+            return CLQueue(nullptr);
+        }
+
+        if (CL_SUCCESS != clGetContextInfo(context, CL_CONTEXT_DEVICES, sizeof(device), &device, nullptr))
+        {
+            return CLQueue(nullptr);
+        }
+    }
+
+    cl_int err;
+#if CL_TARGET_OPENCL_VERSION >= 200
+    auto queue = clCreateCommandQueueWithProperties(context, device, nullptr, &err);
+#else
+    auto queue = clCreateCommandQueue(context, device, 0, &err);
+#endif
+    ONCLEANUP(queue, [=]{ if (queue) clReleaseCommandQueue(queue); });
+    return CLQueue(queue);
 }

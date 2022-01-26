@@ -2,11 +2,13 @@
 
 #include "CLBuffer.h"
 #include "CLDevice.h"
+#include "CLQueue.h"
 
 class CLContext
 {
+private:
+    CLContext(cl_context);
 public:
-    CLContext();
     CLContext(CLContext&&);
     CLContext(const CLContext&);
    ~CLContext();
@@ -14,8 +16,7 @@ public:
     CLContext& operator=(CLContext&&);
     CLContext& operator=(const CLContext&);
 
-    bool Create(cl_device_id);
-
+    CLQueue  CreateQueue();
     CLBuffer CreateBuffer(uint64_t flags, size_t bytes);
 
     operator cl_context() const
@@ -27,6 +28,8 @@ public:
     {
         return !!this->context;
     }
+
+    static CLContext Create(cl_device_id);
 
 private:
     cl_context context;

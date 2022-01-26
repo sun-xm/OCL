@@ -1,10 +1,15 @@
 #include "CLContext.h"
+#include "Common.h"
 #include <utility>
 
 using namespace std;
 
-CLContext::CLContext() : context(nullptr)
+CLContext::CLContext(cl_context context) : context(nullptr)
 {
+    if (context && CL_SUCCESS == clRetainContext(context))
+    {
+        this->context = context;
+    }
 }
 
 CLContext::CLContext(CLContext&& other)
@@ -12,7 +17,7 @@ CLContext::CLContext(CLContext&& other)
     *this = move(other);
 }
 
-CLContext::CLContext(const CLContext& other) : context(nullptr)
+CLContext::CLContext(const CLContext& other) : CLContext(nullptr)
 {
     *this = other;
 }
@@ -53,26 +58,20 @@ CLContext& CLContext::operator=(const CLContext& other)
     return *this;
 }
 
-bool CLContext::Create(cl_device_id device)
+CLQueue CLContext::CreateQueue()
 {
-    if (this->context)
-    {
-        clReleaseContext(this->context);
-    }
-    
-    cl_int error;
-    this->context = clCreateContext(nullptr, 1, &device, nullptr, nullptr, &error);
-
-    if (CL_SUCCESS != error)
-    {
-        this->context = nullptr;
-        return false;
-    }
-
-    return true;
+    return CLQueue::Create(*this);
 }
 
 CLBuffer CLContext::CreateBuffer(uint64_t flags, size_t bytes)
 {
     return CLBuffer::Create(this->context, flags, bytes);
+}
+
+CLContext CLContext::Create(cl_device_id device)
+{
+    cl_int err;
+    cl_context context = clCreateContext(nullptr, 1, &device, nullptr, nullptr, &err);
+    ONCLEANUP(context, [=]{ if (context) clReleaseContext(context); });
+    return CLContext(context);
 }

@@ -1,10 +1,15 @@
 #include "CLKernel.h"
+#include "Common.h"
 #include <utility>
 
 using namespace std;
 
-CLKernel::CLKernel(cl_kernel kernel) : kernel(kernel)
+CLKernel::CLKernel(cl_kernel kernel) : kernel(nullptr)
 {
+    if (kernel && CL_SUCCESS == clRetainKernel(kernel))
+    {
+        this->kernel = kernel;
+    }
 }
 
 CLKernel::CLKernel(CLKernel&& other)
@@ -12,7 +17,7 @@ CLKernel::CLKernel(CLKernel&& other)
     *this = move(other);
 }
 
-CLKernel::CLKernel(const CLKernel& other) : kernel(nullptr)
+CLKernel::CLKernel(const CLKernel& other) : CLKernel(nullptr)
 {
     *this = other;
 }
@@ -63,5 +68,6 @@ CLKernel CLKernel::Create(cl_program program, const string& name)
 {
     cl_int error;
     auto kernel = clCreateKernel(program, name.c_str(), &error);
-    return CLKernel(CL_SUCCESS == error ? kernel : nullptr);
+    ONCLEANUP(kernel, [=]{ if(kernel) clReleaseKernel(kernel); });
+    return CLKernel(kernel);
 }

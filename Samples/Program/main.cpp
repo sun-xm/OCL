@@ -33,15 +33,15 @@ int main(int, char*[])
 
     cout << "Using platform: " << platform.Name() << ", device: " << device.Name() << endl;
 
-    CLContext context;
-    if (!context.Create(device))
+    auto context = CLContext::Create(device);
+    if (!context)
     {
         cout << "Failed to create opencl context" << endl;
         return 0;
     }
 
-    CLQueue queue;
-    if (!queue.Create(context, device))
+    auto queue = context.CreateQueue();
+    if (!queue)
     {
         cout << "Failed to create command queue" << endl;
         return 0;
@@ -72,9 +72,15 @@ int main(int, char*[])
     auto src = context.CreateBuffer(CLBuffer::RO, SIZE);
     auto dst = context.CreateBuffer(CLBuffer::RW, src.Length());
 
+    if (!src || !dst)
+    {
+        cout << "Failed to create buffer" << endl;
+        return 0;
+    }
+
     if (!queue.Map(src))
     {
-        cout << "Failed to map buffer";
+        cout << "Failed to map buffer" << endl;
         return 0;
     }
 

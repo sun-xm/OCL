@@ -5,6 +5,8 @@
 
 class CLQueue
 {
+private:
+    CLQueue(cl_command_queue);
 public:
     CLQueue();
     CLQueue(CLQueue&&);
@@ -14,7 +16,6 @@ public:
     CLQueue& operator=(CLQueue&&);
     CLQueue& operator=(const CLQueue&);
 
-    bool Create(cl_context, cl_device_id);
     bool Execute(const CLKernel&);
     bool Execute(const CLKernel&, const std::initializer_list<CLEvent>&);
     bool Map(CLBuffer&);
@@ -29,6 +30,8 @@ public:
     {
         return this->queue;
     }
+
+    static CLQueue Create(cl_context, cl_device_id device = nullptr);
 
 private:
     cl_command_queue queue;
