@@ -70,7 +70,7 @@ int main(int, char*[])
     }
 
     auto src = context.CreateBuffer(CLBuffer::RO, SIZE);
-    auto dst = context.CreateBuffer(CLBuffer::RW, src.Length());
+    auto dst = context.CreateBuffer(CLBuffer::RW, src.Size());
 
     if (!src || !dst)
     {
@@ -86,14 +86,15 @@ int main(int, char*[])
     }
 
     auto mapped = maps.Get<uint8_t>();
-    for (size_t i = 0; i < src.Length(); i++)
+    auto size = src.Size();
+    for (size_t i = 0; i < size; i++)
     {
         mapped[i] = (uint8_t)i;
     }
     maps.Flush();
 
     copy.Args(src, dst);
-    copy.Size({ src.Length() });
+    copy.Size({ src.Size() });
     if (!queue.Execute(copy))
     {
         cout << "Failed to enqueue kernel" << endl;

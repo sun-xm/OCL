@@ -24,6 +24,7 @@ public:
 
     void Flush();
     void Flush(const std::initializer_list<CLEvent>&);
+    void Unmap();
     void Unmap(const std::initializer_list<CLEvent>&);
 
     const CLEvent& Event() const

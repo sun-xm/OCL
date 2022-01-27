@@ -28,7 +28,7 @@ public:
     CLMemMap Map(cl_command_queue);
     CLMemMap Map(cl_command_queue, const std::initializer_list<CLEvent>& waitList);
 
-    size_t Length() const;
+    size_t Size() const;
 
     operator cl_mem() const
     {

@@ -69,7 +69,7 @@ int main(int, char*[])
     }
 
     auto src = context.CreateBuffer(CLBuffer::RW, 128 * sizeof(uint32_t));
-    auto dst = context.CreateBuffer(CLBuffer::RO, src.Length());
+    auto dst = context.CreateBuffer(CLBuffer::RO, src.Size());
 
     if (!src || !dst)
     {
@@ -78,7 +78,7 @@ int main(int, char*[])
     }
 
     init.Args(src);
-    init.Size({ src.Length() / sizeof(uint32_t) });
+    init.Size({ src.Size() / sizeof(uint32_t) });
 
     if (!queue.Execute(init, {}))
     {
@@ -87,7 +87,7 @@ int main(int, char*[])
     }
 
     copy.Args(src, dst);
-    copy.Size( { src.Length() / sizeof(uint32_t) });
+    copy.Size({ src.Size() / sizeof(uint32_t) });
 
     if (!queue.Execute(copy, { init }))
     {

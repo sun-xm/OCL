@@ -171,7 +171,7 @@ CLMemMap CLBuffer::Map(cl_command_queue queue, const initializer_list<CLEvent>& 
     }
 }
 
-size_t CLBuffer::Length() const
+size_t CLBuffer::Size() const
 {
     if (!this->mem)
     {

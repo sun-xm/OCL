@@ -54,6 +54,11 @@ void CLMemMap::Flush(const std::initializer_list<CLEvent>& waitList)
     }
 }
 
+void CLMemMap::Unmap()
+{
+    this->Unmap({});
+}
+
 void CLMemMap::Unmap(const initializer_list<CLEvent>& waitList)
 {
     if (this->mem && this->map)
