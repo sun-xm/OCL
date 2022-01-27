@@ -11,6 +11,47 @@ uint64_t CLBuffer::RO = CL_MEM_READ_ONLY;
 uint64_t CLBuffer::WO = CL_MEM_WRITE_ONLY;
 uint64_t CLBuffer::RW = CL_MEM_READ_WRITE;
 
+CLMemMap::SyncFunc  CLBuffer::sync = [](cl_mem mem, cl_command_queue que, const initializer_list<CLEvent>& waitList, vector<uint8_t>& data)
+{
+    vector<cl_event> events;
+    for (auto& e : waitList)
+    {
+        if (e)
+        {
+            events.push_back(e);
+        }
+    }
+
+    cl_event event;
+    if (CL_SUCCESS != clEnqueueReadBuffer(que, mem, CL_FALSE, 0, data.size(), &data[0], (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event))
+    {
+        throw runtime_error("Failed to enqueue read buffer");
+    }
+
+    ONCLEANUP(event, [=]{ clReleaseEvent(event); });
+    return CLEvent(event);
+};
+
+CLMemMap::FlushFunc CLBuffer::flush = [](cl_mem mem, cl_command_queue que, const initializer_list<CLEvent>& waitList, const vector<uint8_t>& data)
+{
+    vector<cl_event> events;
+    for (auto& e : waitList)
+    {
+        if (e)
+        {
+            events.push_back(e);
+        }
+    }
+
+    cl_event event;
+    if(CL_SUCCESS != clEnqueueWriteBuffer(que, mem, CL_FALSE, 0, data.size(), data.data(), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event))
+    {
+        throw runtime_error("Failed to enqueue write buffer");
+    }
+    ONCLEANUP(event, [=]{ clReleaseEvent(event); });
+    return CLEvent(event);
+};
+
 CLBuffer::CLBuffer(cl_mem mem) : mem(nullptr)
 {
     if (mem && CL_SUCCESS == clRetainMemObject(mem))
@@ -79,7 +120,7 @@ CLMemMap CLBuffer::Map(cl_command_queue queue, const initializer_list<CLEvent>& 
     if (CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_FLAGS, sizeof(flags), &flags, nullptr) ||
         CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_SIZE,  sizeof(bytes), &bytes, nullptr))
     {
-        return CLMemMap(nullptr, nullptr, nullptr, nullptr, 0);
+        return CLMemMap(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, 0);
     }
 
     cl_map_flags f = 0;
@@ -109,14 +150,25 @@ CLMemMap CLBuffer::Map(cl_command_queue queue, const initializer_list<CLEvent>& 
     cl_event event;
     auto map = clEnqueueMapBuffer(queue, this->mem, CL_FALSE, f, 0, bytes, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &error);
 
-    if (CL_SUCCESS != error)
+    switch (error)
     {
-        return CLMemMap(nullptr, nullptr, nullptr, nullptr, 0);
-    }
+        case CL_SUCCESS:
+        {
+            this->event = CLEvent(event);
+            clReleaseEvent(event);
+            return CLMemMap(this->mem, queue, event, map, nullptr, nullptr, 0);
+        }
 
-    this->event = CLEvent(event);
-    clReleaseEvent(event);
-    return CLMemMap(this->mem, queue, event, map, bytes);
+        case CL_MAP_FAILURE:
+        {
+            return CLMemMap(this->mem, queue, nullptr, nullptr, sync, flush, bytes);
+        }
+
+        default:
+        {
+            return CLMemMap(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, 0);
+        }
+    }
 }
 
 size_t CLBuffer::Length() const

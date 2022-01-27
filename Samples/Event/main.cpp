@@ -101,9 +101,8 @@ int main(int, char*[])
         cout << "Failed to map buffer" << endl;
         return 0;
     }
-    map.Event().Wait();
 
-    auto mapped = map.Get<uint32_t>();
+    auto mapped = map.GetSynced<uint32_t>({ map });
     cout << mapped[0] << ' ' << mapped[1] << ' ' << mapped[2] << endl;
 
     return 0;

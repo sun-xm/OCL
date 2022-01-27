@@ -49,4 +49,7 @@ public:
 private:
     cl_mem mem;
     mutable CLEvent event;
+
+    static CLMemMap::SyncFunc  sync;
+    static CLMemMap::FlushFunc flush;
 };

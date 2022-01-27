@@ -90,6 +90,7 @@ int main(int, char*[])
     {
         mapped[i] = (uint8_t)i;
     }
+    maps.Flush();
 
     copy.Args(src, dst);
     copy.Size({ src.Length() });
@@ -106,7 +107,7 @@ int main(int, char*[])
         return 0;
     }
 
-    mapped = mapd.Get<uint8_t>();
+    mapped = mapd.GetSynced<uint8_t>();
     cout << (int)mapped[0] << ' ' << (int)mapped[1] << ' ' << (int)mapped[2] << endl;
 
     return 0;

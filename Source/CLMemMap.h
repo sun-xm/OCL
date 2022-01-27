@@ -2,12 +2,19 @@
 
 #include "CLEvent.h"
 #include <CL/cl.h>
+#include <cstdint>
+#include <functional>
 #include <initializer_list>
+#include <vector>
 
 class CLMemMap
 {
 public:
-    CLMemMap(cl_mem, cl_command_queue, cl_event, void*, size_t);
+    typedef std::function<CLEvent(cl_mem, cl_command_queue, const std::initializer_list<CLEvent>&, std::vector<uint8_t>&)> SyncFunc;
+    typedef std::function<CLEvent(cl_mem, cl_command_queue, const std::initializer_list<CLEvent>&, const std::vector<uint8_t>&)> FlushFunc;
+
+public:
+    CLMemMap(cl_mem, cl_command_queue, cl_event, void*, const SyncFunc&, const FlushFunc&, size_t);
     CLMemMap(const CLMemMap&) = delete;
     CLMemMap(CLMemMap&&) = delete;
    ~CLMemMap();
@@ -15,7 +22,9 @@ public:
     CLMemMap& operator=(const CLMemMap&) = delete;
     CLMemMap& operator=(CLMemMap&&) = delete;
 
-    void Unmap(const std::initializer_list<CLEvent>& waitList = {});
+    void Flush();
+    void Flush(const std::initializer_list<CLEvent>&);
+    void Unmap(const std::initializer_list<CLEvent>&);
 
     const CLEvent& Event() const
     {
@@ -28,25 +37,44 @@ public:
 
     operator bool() const
     {
-        return !!this->map;
+        return !!this->mem;
     }
 
     template<typename T>
-    T* Get()
+    T* Get(const std::initializer_list<CLEvent>& waitList = {})
     {
-        return (T*)this->map;
+        return (T*)this->Get(false, waitList);
     }
 
     template<typename T>
-    const T* Get() const
+    const T* Get(const std::initializer_list<CLEvent>& waitList = {}) const
     {
-        return (T*)this->map;
+        return (T*)this->Get(false, waitList);
     }
+
+    template<typename T>
+    T* GetSynced(const std::initializer_list<CLEvent>& waitList = {})
+    {
+        return (T*)this->Get(true, waitList);
+    }
+
+    template<typename T>
+    const T* GetSynced(const std::initializer_list<CLEvent>& waitList = {}) const
+    {
+        return (T*)this->Get(true, waitList);
+    }
+
+private:
+    void* Get(bool sync, const std::initializer_list<CLEvent>&);
 
 private:
     void*  map;
     cl_mem mem;
     cl_command_queue que;
 
-    CLEvent event;
+    SyncFunc sync;
+    FlushFunc flush;
+    std::vector<uint8_t> data;
+    
+    mutable CLEvent event;
 };
