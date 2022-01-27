@@ -1,5 +1,5 @@
 #include "CLQueue.h"
-#include "Common.h"
+#include "CLCommon.h"
 #include <utility>
 
 using namespace std;

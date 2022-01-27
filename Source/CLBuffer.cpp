@@ -1,5 +1,5 @@
 #include "CLBuffer.h"
-#include "Common.h"
+#include "CLCommon.h"
 #include <cassert>
 #include <stdexcept>
 #include <utility>

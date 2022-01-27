@@ -4,7 +4,7 @@
 #include "CLProgram.h"
 #include "CLBuffer.h"
 #include "CLQueue.h"
-#include "Common.h"
+#include "CLCommon.h"
 #include <cstdint>
 #include <fstream>
 #include <iostream>
