@@ -15,8 +15,8 @@ public:
 
 public:
     CLMemMap(cl_mem, cl_command_queue, cl_event, void*, const SyncFunc&, const FlushFunc&, size_t);
+    CLMemMap(CLMemMap&&);
     CLMemMap(const CLMemMap&) = delete;
-    CLMemMap(CLMemMap&&) = delete;
    ~CLMemMap();
 
     CLMemMap& operator=(const CLMemMap&) = delete;

@@ -16,8 +16,8 @@ public:
     CLProgram& operator=(CLProgram&&);
     CLProgram& operator=(const CLProgram&);
 
-    bool Create(cl_context, const std::string&, const std::string& options = std::string(), std::string& log = std::string());
-    bool Create(cl_context, std::istream&, const std::string& options = std::string(), std::string& log = std::string());
+    bool Create(cl_context, const std::string&, const std::string& options, std::string& log);
+    bool Create(cl_context, std::istream&, const std::string& options, std::string& log);
 
     CLKernel CreateKernel(const std::string& name);
 

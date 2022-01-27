@@ -9,6 +9,7 @@ class CLBuffer
 private:
     CLBuffer(cl_mem);
 public:
+    CLBuffer();
     CLBuffer(CLBuffer&&);
     CLBuffer(const CLBuffer&);
    ~CLBuffer();

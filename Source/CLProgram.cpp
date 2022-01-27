@@ -13,7 +13,7 @@ CLProgram::CLProgram(CLProgram&& other)
     *this = move(other);
 }
 
-CLProgram::CLProgram(const CLProgram& other) : program(nullptr)
+CLProgram::CLProgram(const CLProgram& other) : CLProgram()
 {
     *this = other;
 }

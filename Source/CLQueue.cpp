@@ -4,7 +4,11 @@
 
 using namespace std;
 
-CLQueue::CLQueue(cl_command_queue queue) : queue(nullptr)
+CLQueue::CLQueue() : queue(nullptr)
+{
+}
+
+CLQueue::CLQueue(cl_command_queue queue) : CLQueue()
 {
     if (queue && CL_SUCCESS == clRetainCommandQueue(queue))
     {

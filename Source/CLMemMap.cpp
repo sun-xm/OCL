@@ -10,9 +10,9 @@ CLMemMap::CLMemMap(cl_mem mem, cl_command_queue que, cl_event event, void* map, 
     {
         if (CL_SUCCESS == clRetainCommandQueue(que))
         {
+            this->map = map;
             this->mem = mem;
             this->que = que;
-            this->map = map;
             this->sync = sync;
             this->flush = flush;
             this->event = CLEvent(event);
@@ -23,6 +23,25 @@ CLMemMap::CLMemMap(cl_mem mem, cl_command_queue que, cl_event event, void* map, 
             clReleaseMemObject(mem);
         }
     }
+}
+
+CLMemMap::CLMemMap(CLMemMap&& other)
+{
+    this->map = other.map;
+    this->mem = other.mem;
+    this->que = other.que;
+    this->sync = other.sync;
+    this->flush = other.flush;
+    this->event = other.event;
+
+    this->data.swap(other.data);
+
+    other.map = nullptr;
+    other.mem = nullptr;
+    other.que = nullptr;
+    other.sync = nullptr;
+    other.flush = nullptr;
+    other.event = CLEvent(nullptr);
 }
 
 CLMemMap::~CLMemMap()
@@ -103,6 +122,11 @@ void* CLMemMap::Get(bool sync, const initializer_list<CLEvent>& waitList)
             }
         }
         return this->map;
+    }
+
+    if (this->data.empty())
+    {
+        return nullptr;
     }
 
     if (sync && this->sync)

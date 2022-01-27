@@ -4,7 +4,11 @@
 
 using namespace std;
 
-CLKernel::CLKernel(cl_kernel kernel) : kernel(nullptr)
+CLKernel::CLKernel() : kernel(nullptr)
+{
+}
+
+CLKernel::CLKernel(cl_kernel kernel) : CLKernel()
 {
     if (kernel && CL_SUCCESS == clRetainKernel(kernel))
     {

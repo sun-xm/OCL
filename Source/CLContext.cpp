@@ -4,7 +4,11 @@
 
 using namespace std;
 
-CLContext::CLContext(cl_context context) : context(nullptr)
+CLContext::CLContext() : context(nullptr)
+{
+}
+
+CLContext::CLContext(cl_context context) : CLContext()
 {
     if (context && CL_SUCCESS == clRetainContext(context))
     {

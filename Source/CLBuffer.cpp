@@ -52,7 +52,11 @@ CLMemMap::FlushFunc CLBuffer::flush = [](cl_mem mem, cl_command_queue que, const
     return CLEvent(event);
 };
 
-CLBuffer::CLBuffer(cl_mem mem) : mem(nullptr)
+CLBuffer::CLBuffer() : mem(nullptr)
+{
+}
+
+CLBuffer::CLBuffer(cl_mem mem) : CLBuffer()
 {
     if (mem && CL_SUCCESS == clRetainMemObject(mem))
     {

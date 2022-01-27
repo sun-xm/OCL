@@ -9,6 +9,7 @@ class CLContext
 private:
     CLContext(cl_context);
 public:
+    CLContext();
     CLContext(CLContext&&);
     CLContext(const CLContext&);
    ~CLContext();

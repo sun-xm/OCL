@@ -11,6 +11,7 @@ class CLKernel
 private:
     CLKernel(cl_kernel);
 public:
+    CLKernel();
     CLKernel(CLKernel&&);
     CLKernel(const CLKernel&);
    ~CLKernel();
