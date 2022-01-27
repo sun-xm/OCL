@@ -1,3 +1,5 @@
+#pragma comment(lib, "OpenCL.lib")
+
 #include "CLPlatform.h"
 #include "CLProgram.h"
 #include "CLBuffer.h"
@@ -6,8 +8,6 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
-
-#pragma comment(lib, "OpenCL.lib")
 
 using namespace std;
 
@@ -77,16 +77,10 @@ int main(int, char*[])
         return 0;
     }
 
-    if (!queue.Map(src))
-    {
-        cout << "Failed to map buffer" << endl;
-        return 0;
-    }
-
     init.Args(src);
     init.Size({ src.Length() / sizeof(uint32_t) });
 
-    if (!queue.Execute(init))
+    if (!queue.Execute(init, {}))
     {
         cout << "Failed to execute init" << endl;
         return 0;
@@ -101,14 +95,15 @@ int main(int, char*[])
         return 0;
     }
 
-    if (!queue.Map(dst, { copy }))
+    auto map = queue.Map(dst, { copy });
+    if (!map)
     {
         cout << "Failed to map buffer" << endl;
         return 0;
     }
-    dst.Event().Wait();
+    map.Event().Wait();
 
-    auto mapped = (uint32_t*)dst.Mapped();
+    auto mapped = map.Get<uint32_t>();
     cout << mapped[0] << ' ' << mapped[1] << ' ' << mapped[2] << endl;
 
     return 0;

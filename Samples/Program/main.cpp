@@ -1,3 +1,5 @@
+#pragma comment(lib, "OpenCL.lib")
+
 #include "CLPlatform.h"
 #include "CLProgram.h"
 #include "CLBuffer.h"
@@ -6,8 +8,6 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
-
-#pragma comment(lib, "OpenCL.lib")
 
 #define SIZE    (128)
 
@@ -78,13 +78,14 @@ int main(int, char*[])
         return 0;
     }
 
-    if (!queue.Map(src))
+    auto maps = queue.Map(src);
+    if (!maps)
     {
         cout << "Failed to map buffer" << endl;
         return 0;
     }
 
-    auto mapped = (uint8_t*)src.Mapped();
+    auto mapped = maps.Get<uint8_t>();
     for (size_t i = 0; i < src.Length(); i++)
     {
         mapped[i] = (uint8_t)i;
@@ -98,13 +99,14 @@ int main(int, char*[])
         return 0;
     }
 
-    if (!queue.Map(dst))
+    auto mapd = queue.Map(dst);
+    if (!mapd)
     {
         cout << "Failed to map buffer" << endl;
         return 0;
     }
 
-    mapped = (uint8_t*)dst.Mapped();
+    mapped = mapd.Get<uint8_t>();
     cout << (int)mapped[0] << ' ' << (int)mapped[1] << ' ' << (int)mapped[2] << endl;
 
     return 0;

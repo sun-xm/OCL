@@ -7,6 +7,7 @@ set(SOURCE_CPP ${SOURCE_DIR}/CLPlatform.cpp
                ${SOURCE_DIR}/CLKernel.cpp
                ${SOURCE_DIR}/CLQueue.cpp
                ${SOURCE_DIR}/CLEvent.cpp
+               ${SOURCE_DIR}/CLMemMap.cpp
                ${SOURCE_DIR}/CLBuffer.cpp)
 
 include_directories($ENV{OPENCL_PATH}include ${SOURCE_DIR})

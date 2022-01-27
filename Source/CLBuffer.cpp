@@ -11,7 +11,7 @@ uint64_t CLBuffer::RO = CL_MEM_READ_ONLY;
 uint64_t CLBuffer::WO = CL_MEM_WRITE_ONLY;
 uint64_t CLBuffer::RW = CL_MEM_READ_WRITE;
 
-CLBuffer::CLBuffer(cl_mem mem) : mem(nullptr), map(nullptr), que(nullptr)
+CLBuffer::CLBuffer(cl_mem mem) : mem(nullptr)
 {
     if (mem && CL_SUCCESS == clRetainMemObject(mem))
     {
@@ -31,8 +31,6 @@ CLBuffer::CLBuffer(const CLBuffer& other) : CLBuffer(nullptr)
 
 CLBuffer::~CLBuffer()
 {
-    this->Unmap();
-
     if (this->mem)
     {
         clReleaseMemObject(this->mem);
@@ -67,39 +65,22 @@ CLBuffer& CLBuffer::operator=(const CLBuffer& other)
     return *this;
 }
 
-bool CLBuffer::Map(cl_command_queue queue)
+CLMemMap CLBuffer::Map(cl_command_queue queue)
 {
-    if (!this->Map(queue, {}))
-    {
-        return false;
-    }
-
-    this->event.Wait();
-    return true;
+    ONCLEANUP(_, [this]{ this->Event().Wait(); });
+    return this->Map(queue, {});
 }
 
-bool CLBuffer::Map(cl_command_queue queue, const initializer_list<CLEvent>& waitList)
+CLMemMap CLBuffer::Map(cl_command_queue queue, const initializer_list<CLEvent>& waitList)
 {
     cl_mem_flags flags;
-    if (CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_FLAGS, sizeof(flags), &flags, nullptr))
-    {
-        return false;
-    }
-
     size_t bytes;
-    if (CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_SIZE, sizeof(bytes), &bytes, nullptr))
-    {
-        return false;
-    }
 
-    this->Unmap(waitList);
-    this->event.Wait();
-
-    if (CL_SUCCESS != clRetainCommandQueue(queue))
+    if (CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_FLAGS, sizeof(flags), &flags, nullptr) ||
+        CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_SIZE,  sizeof(bytes), &bytes, nullptr))
     {
-        return false;
+        return CLMemMap(nullptr, nullptr, nullptr, nullptr, 0);
     }
-    this->que = queue;
 
     cl_map_flags f = 0;
     if (CL_MEM_READ_ONLY & flags)
@@ -114,7 +95,7 @@ bool CLBuffer::Map(cl_command_queue queue, const initializer_list<CLEvent>& wait
     {
         f = CL_MAP_READ | CL_MAP_WRITE;
     }
-
+    
     vector<cl_event> events;
     for (auto& e : waitList)
     {
@@ -126,42 +107,16 @@ bool CLBuffer::Map(cl_command_queue queue, const initializer_list<CLEvent>& wait
 
     cl_int error;
     cl_event event;
-    this->map = clEnqueueMapBuffer(this->que, this->mem, CL_FALSE, f, 0, bytes, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &error);
+    auto map = clEnqueueMapBuffer(queue, this->mem, CL_FALSE, f, 0, bytes, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &error);
+
+    if (CL_SUCCESS != error)
+    {
+        return CLMemMap(nullptr, nullptr, nullptr, nullptr, 0);
+    }
 
     this->event = CLEvent(event);
     clReleaseEvent(event);
-    return CL_SUCCESS == error;
-}
-
-void CLBuffer::Unmap(const initializer_list<CLEvent>& waitList)
-{
-    if (this->map)
-    {
-        assert(this->que);
-
-        vector<cl_event> events;
-        for (auto& e : waitList)
-        {
-            if (e)
-            {
-                events.push_back(e);
-            }
-        }
-
-        cl_event event;
-        auto error = clEnqueueUnmapMemObject(this->que, this->mem, this->map, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
-        assert(CL_SUCCESS == error);
-        error = clReleaseCommandQueue(this->que);
-        assert(CL_SUCCESS == error);
-        this->que = nullptr;
-
-        this->event = CLEvent(event);
-        clReleaseEvent(event);
-    }
-    else
-    {
-        this->event = CLEvent();
-    }
+    return CLMemMap(this->mem, queue, event, map, bytes);
 }
 
 size_t CLBuffer::Length() const

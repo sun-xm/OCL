@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CLEvent.h"
+#include "CLMemMap.h"
 #include <cstdint>
 #include <initializer_list>
 
@@ -25,16 +25,10 @@ public:
         return this->event;
     }
 
-    bool Map(cl_command_queue);
-    bool Map(cl_command_queue, const std::initializer_list<CLEvent>& waitList);
-    void Unmap(const std::initializer_list<CLEvent>& waitList = {});
+    CLMemMap Map(cl_command_queue);
+    CLMemMap Map(cl_command_queue, const std::initializer_list<CLEvent>& waitList);
 
     size_t Length() const;
-    
-    void* Mapped() const
-    {
-        return this->map;
-    }
 
     operator cl_mem() const
     {
@@ -54,8 +48,5 @@ public:
 
 private:
     cl_mem mem;
-    void*  map;
-    cl_command_queue que;
-
     mutable CLEvent event;
 };

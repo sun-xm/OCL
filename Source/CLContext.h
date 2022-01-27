@@ -16,7 +16,7 @@ public:
     CLContext& operator=(CLContext&&);
     CLContext& operator=(const CLContext&);
 
-    CLQueue  CreateQueue();
+    CLQueue CreateQueue();
     CLBuffer CreateBuffer(uint64_t flags, size_t bytes);
 
     operator cl_context() const

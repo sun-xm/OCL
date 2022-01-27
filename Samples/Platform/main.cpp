@@ -1,7 +1,7 @@
+#pragma comment(lib, "OpenCL.lib")
+
 #include "CLPlatform.h"
 #include <iostream>
-
-#pragma comment(lib, "OpenCL.lib")
 
 using namespace std;
 

@@ -58,6 +58,16 @@ CLQueue& CLQueue::operator=(const CLQueue& other)
     return *this;
 }
 
+CLMemMap CLQueue::Map(CLBuffer& buffer)
+{
+    return buffer.Map(this->queue);
+}
+
+CLMemMap CLQueue::Map(CLBuffer& buffer, const initializer_list<CLEvent>& waitList)
+{
+    return buffer.Map(this->queue, waitList);
+}
+
 bool CLQueue::Execute(const CLKernel& kernel)
 {
     cl_event event;
@@ -95,103 +105,93 @@ bool CLQueue::Execute(const CLKernel& kernel, const initializer_list<CLEvent>& w
     return true;
 }
 
-bool CLQueue::Map(CLBuffer& buffer)
-{
-    return buffer.Map(this->queue);
-}
+// bool CLQueue::Read(const CLBuffer& buffer, void* host, size_t bytes, size_t offset)
+// {
+//     if (!this->Read(buffer, host, bytes, offset, {}))
+//     {
+//         return false;
+//     }
 
-bool CLQueue::Map(CLBuffer& buffer, const initializer_list<CLEvent>& waitList)
-{
-    return buffer.Map(this->queue, waitList);
-}
+//     buffer.Event().Wait();
+//     return true;
+// }
 
-bool CLQueue::Read(const CLBuffer& buffer, void* host, size_t bytes, size_t offset)
-{
-    if (!this->Read(buffer, host, bytes, offset, {}))
-    {
-        return false;
-    }
+// bool CLQueue::Read(const CLBuffer& buffer, void* host, size_t bytes, size_t offset, const initializer_list<CLEvent>& waitList)
+// {
+//     if (buffer.Mapped())
+//     {
+//         buffer.Event() = CLEvent();
 
-    buffer.Event().Wait();
-    return true;
-}
+//         if (buffer.Mapped() != host)
+//         {
+//             memcpy(host, ((char*)buffer.Mapped() + offset), bytes);
+//         }
+//         return true;
+//     }
 
-bool CLQueue::Read(const CLBuffer& buffer, void* host, size_t bytes, size_t offset, const initializer_list<CLEvent>& waitList)
-{
-    if (buffer.Mapped())
-    {
-        buffer.Event() = CLEvent();
+//     vector<cl_event> events;
+//     for (auto& e : waitList)
+//     {
+//         if (e)
+//         {
+//             events.push_back(e);
+//         }
+//     }
 
-        if (buffer.Mapped() != host)
-        {
-            memcpy(host, ((char*)buffer.Mapped() + offset), bytes);
-        }
-        return true;
-    }
+//     cl_event event;
+//     if (CL_SUCCESS != clEnqueueReadBuffer(this->queue, buffer, CL_FALSE, offset, bytes, host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event))
+//     {
+//         return false;
+//     }
 
-    vector<cl_event> events;
-    for (auto& e : waitList)
-    {
-        if (e)
-        {
-            events.push_back(e);
-        }
-    }
+//     buffer.Event() = CLEvent(event);
+//     clReleaseEvent(event);
+//     return true;
+// }
 
-    cl_event event;
-    if (CL_SUCCESS != clEnqueueReadBuffer(this->queue, buffer, CL_FALSE, offset, bytes, host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event))
-    {
-        return false;
-    }
+// bool CLQueue::Write(CLBuffer& buffer, void* host, size_t bytes, size_t offset)
+// {
+//     if (!this->Write(buffer, host, bytes, offset, {}))
+//     {
+//         return false;
+//     }
 
-    buffer.Event() = CLEvent(event);
-    clReleaseEvent(event);
-    return true;
-}
+//     buffer.Event().Wait();
+//     return true;
+// }
 
-bool CLQueue::Write(CLBuffer& buffer, void* host, size_t bytes, size_t offset)
-{
-    if (!this->Write(buffer, host, bytes, offset, {}))
-    {
-        return false;
-    }
+// bool CLQueue::Write(CLBuffer& buffer, void* host, size_t bytes, size_t offset, const initializer_list<CLEvent>& waitList)
+// {
+//     if (buffer.Mapped())
+//     {
+//         buffer.Event() = CLEvent();
 
-    buffer.Event().Wait();
-    return true;
-}
+//         if (buffer.Mapped() != host)
+//         {
+//             memcpy(((char*)buffer.Mapped() + offset), host, bytes);
+//         }
+//         return true;
+//     }
 
-bool CLQueue::Write(CLBuffer& buffer, void* host, size_t bytes, size_t offset, const initializer_list<CLEvent>& waitList)
-{
-    if (buffer.Mapped())
-    {
-        buffer.Event() = CLEvent();
+//     vector<cl_event> events;
+//     for (auto& e : waitList)
+//     {
+//         if (e)
+//         {
+//             events.push_back(e);
+//         }
+//     }
 
-        if (buffer.Mapped() != host)
-        {
-            memcpy(((char*)buffer.Mapped() + offset), host, bytes);
-        }
-        return true;
-    }
+//     cl_event event;
+//     if (CL_SUCCESS != clEnqueueWriteBuffer(this->queue, buffer, CL_FALSE, offset, bytes, host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event))
+//     {
+//         return false;
+//     }
 
-    vector<cl_event> events;
-    for (auto& e : waitList)
-    {
-        if (e)
-        {
-            events.push_back(e);
-        }
-    }
-
-    cl_event event;
-    if (CL_SUCCESS != clEnqueueWriteBuffer(this->queue, buffer, CL_FALSE, offset, bytes, host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event))
-    {
-        return false;
-    }
-
-    buffer.Event() = CLEvent(event);
-    clReleaseEvent(event);
-    return true;
-}
+//     buffer.Event() = CLEvent(event);
+//     clReleaseEvent(event);
+//     return true;
+// }
 
 void CLQueue::Finish()
 {
