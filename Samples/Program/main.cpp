@@ -1,9 +1,7 @@
 #pragma comment(lib, "OpenCL.lib")
 
 #include "CLPlatform.h"
-#include "CLProgram.h"
-#include "CLBuffer.h"
-#include "CLQueue.h"
+#include "CLContext.h"
 #include "CLCommon.h"
 #include <cstdint>
 #include <fstream>
@@ -55,8 +53,8 @@ int main(int, char*[])
     }
 
     string log;
-    CLProgram program;
-    if (!program.Create(context, source, "", log))
+    CLProgram program = context.CreateProgram(source, "", log);
+    if (!program)
     {
         cout << log << endl;
         return 0;
