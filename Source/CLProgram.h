@@ -1,23 +1,19 @@
 #pragma once
 
-#include "CLContext.h"
 #include "CLKernel.h"
-#include <iostream>
 #include <string>
 
 class CLProgram
 {
 public:
     CLProgram();
+    CLProgram(cl_program);
     CLProgram(CLProgram&&);
     CLProgram(const CLProgram&);
    ~CLProgram();
 
     CLProgram& operator=(CLProgram&&);
     CLProgram& operator=(const CLProgram&);
-
-    bool Create(cl_context, const std::string&, const std::string& options, std::string& log);
-    bool Create(cl_context, std::istream&, const std::string& options, std::string& log);
 
     CLKernel CreateKernel(const std::string& name);
 

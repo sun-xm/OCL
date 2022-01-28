@@ -2,7 +2,10 @@
 
 #include "CLBuffer.h"
 #include "CLDevice.h"
+#include "CLProgram.h"
 #include "CLQueue.h"
+#include <iostream>
+#include <string>
 
 class CLContext
 {
@@ -17,8 +20,10 @@ public:
     CLContext& operator=(CLContext&&);
     CLContext& operator=(const CLContext&);
 
-    CLQueue CreateQueue();
-    CLBuffer CreateBuffer(uint64_t flags, size_t bytes);
+    CLProgram CreateProgram(const char* source, const char* options, std::string& log);
+    CLProgram CreateProgram(std::istream& source, const char* options, std::string& log);
+    CLQueue   CreateQueue();
+    CLBuffer  CreateBuffer(uint64_t flags, size_t bytes);
 
     operator cl_context() const
     {
