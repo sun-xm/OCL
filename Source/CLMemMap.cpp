@@ -3,8 +3,7 @@
 
 using namespace std;
 
-CLMemMap::CLMemMap(cl_mem mem, cl_command_queue que, cl_event event, void* map, const SyncFunc& sync, const FlushFunc& flush, size_t size)
-  : mem(nullptr), que(nullptr), map(nullptr)
+CLMemMap::CLMemMap(cl_mem mem, cl_command_queue que, cl_event event, void* map) : mem(nullptr), que(nullptr), map(nullptr)
 {
     if (CL_SUCCESS == clRetainMemObject(mem))
     {
@@ -13,10 +12,7 @@ CLMemMap::CLMemMap(cl_mem mem, cl_command_queue que, cl_event event, void* map, 
             this->map = map;
             this->mem = mem;
             this->que = que;
-            this->sync = sync;
-            this->flush = flush;
             this->event = CLEvent(event);
-            this->data.resize(size);
         }
         else
         {
@@ -30,57 +26,28 @@ CLMemMap::CLMemMap(CLMemMap&& other)
     this->map = other.map;
     this->mem = other.mem;
     this->que = other.que;
-    this->sync = other.sync;
-    this->flush = other.flush;
     this->event = other.event;
-
-    this->data.swap(other.data);
 
     other.map = nullptr;
     other.mem = nullptr;
     other.que = nullptr;
-    other.sync = nullptr;
-    other.flush = nullptr;
     other.event = CLEvent(nullptr);
 }
 
 CLMemMap::~CLMemMap()
 {
     this->Unmap({});
-    
-    if (this->mem)
-    {
-        clReleaseMemObject(this->mem);
-    }
-
-    if (this->que)
-    {
-        clReleaseCommandQueue(this->que);
-    }
-}
-
-void CLMemMap::Flush()
-{
-    this->Flush({});
-    this->event.Wait();
-}
-
-void CLMemMap::Flush(const std::initializer_list<CLEvent>& waitList)
-{
-    if (this->flush)
-    {
-        this->event = this->flush(this->mem, this->que, waitList, this->data);
-    }
 }
 
 void CLMemMap::Unmap()
 {
     this->Unmap({});
+    this->event.Wait();
 }
 
 void CLMemMap::Unmap(const initializer_list<CLEvent>& waitList)
 {
-    if (this->mem && this->map)
+    if (this->map)
     {
         vector<cl_event> events;
         for (auto& e : waitList)
@@ -99,10 +66,27 @@ void CLMemMap::Unmap(const initializer_list<CLEvent>& waitList)
         this->event = CLEvent(event);
         clReleaseEvent(event);
     }
+
+    if (this->mem)
+    {
+        clReleaseMemObject(this->mem);
+        this->mem = nullptr;
+    }
+
+    if (this->que)
+    {
+        clReleaseCommandQueue(this->que);
+        this->que = nullptr;
+    }
 }
 
-void* CLMemMap::Get(bool sync, const initializer_list<CLEvent>& waitList)
+void* CLMemMap::Get(const initializer_list<CLEvent>& waitList)
 {
+    if (!this->mem)
+    {
+        return nullptr;
+    }
+
     if (this->map)
     {
         if (waitList.size())
@@ -121,19 +105,7 @@ void* CLMemMap::Get(bool sync, const initializer_list<CLEvent>& waitList)
                 clWaitForEvents((cl_uint)events.size(), events.data());
             }
         }
-        return this->map;
     }
 
-    if (this->data.empty())
-    {
-        return nullptr;
-    }
-
-    if (sync && this->sync)
-    {
-        this->event = this->sync(this->mem, this->que, waitList, this->data);
-        this->event.Wait();
-    }
-    
-    return &this->data[0];
+    return this->map;
 }

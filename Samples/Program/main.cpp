@@ -3,6 +3,7 @@
 #include "CLPlatform.h"
 #include "CLContext.h"
 #include "CLCommon.h"
+#include "CLFlags.h"
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -67,8 +68,8 @@ int main(int, char*[])
         return 0;
     }
 
-    auto src = context.CreateBuffer(CLBuffer::RO, SIZE);
-    auto dst = context.CreateBuffer(CLBuffer::RW, src.Size());
+    auto src = context.CreateBuffer(CLFlags::RO, SIZE);
+    auto dst = context.CreateBuffer(CLFlags::RW, src.Size());
 
     if (!src || !dst)
     {
@@ -76,7 +77,7 @@ int main(int, char*[])
         return 0;
     }
 
-    auto maps = queue.Map(src);
+    auto maps = queue.Map(src, CLFlags::WO);
     if (!maps)
     {
         cout << "Failed to map buffer" << endl;
@@ -89,7 +90,7 @@ int main(int, char*[])
     {
         mapped[i] = (uint8_t)i;
     }
-    maps.Flush();
+    maps.Unmap();
 
     copy.Args(src, dst);
     copy.Size({ src.Size() });
@@ -99,14 +100,14 @@ int main(int, char*[])
         return 0;
     }
 
-    auto mapd = queue.Map(dst);
+    auto mapd = queue.Map(dst, CLFlags::RO);
     if (!mapd)
     {
         cout << "Failed to map buffer" << endl;
         return 0;
     }
 
-    mapped = mapd.GetSynced<uint8_t>();
+    mapped = mapd.Get<uint8_t>();
     cout << (int)mapped[0] << ' ' << (int)mapped[1] << ' ' << (int)mapped[2] << endl;
 
     return 0;

@@ -3,6 +3,7 @@
 #include "CLPlatform.h"
 #include "CLContext.h"
 #include "CLCommon.h"
+#include "CLFlags.h"
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -66,8 +67,8 @@ int main(int, char*[])
         return 0;
     }
 
-    auto src = context.CreateBuffer(CLBuffer::RW, 128 * sizeof(uint32_t));
-    auto dst = context.CreateBuffer(CLBuffer::RO, src.Size());
+    auto src = context.CreateBuffer(CLFlags::RW, 128 * sizeof(uint32_t));
+    auto dst = context.CreateBuffer(CLFlags::RO, src.Size());
 
     if (!src || !dst)
     {
@@ -93,14 +94,14 @@ int main(int, char*[])
         return 0;
     }
 
-    auto map = queue.Map(dst, { copy });
+    auto map = queue.Map(dst, CLFlags::RO, { copy });
     if (!map)
     {
         cout << "Failed to map buffer" << endl;
         return 0;
     }
 
-    auto mapped = map.GetSynced<uint32_t>({ map });
+    auto mapped = map.Get<uint32_t>({ map });
     cout << mapped[0] << ' ' << mapped[1] << ' ' << mapped[2] << endl;
 
     return 0;

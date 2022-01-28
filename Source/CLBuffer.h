@@ -26,8 +26,8 @@ public:
         return this->event;
     }
 
-    CLMemMap Map(cl_command_queue);
-    CLMemMap Map(cl_command_queue, const std::initializer_list<CLEvent>& waitList);
+    CLMemMap Map(cl_command_queue, uint32_t flags);
+    CLMemMap Map(cl_command_queue, uint32_t flags, const std::initializer_list<CLEvent>& waitList);
 
     size_t Size() const;
 
@@ -41,16 +41,9 @@ public:
         return !!this->mem;
     }
 
-    static CLBuffer Create(cl_context, uint64_t flags, size_t bytes);
-
-    static uint64_t RO;
-    static uint64_t WO;
-    static uint64_t RW;
+    static CLBuffer Create(cl_context, uint32_t flags, size_t bytes);
 
 private:
     cl_mem mem;
     mutable CLEvent event;
-
-    static CLMemMap::SyncFunc  sync;
-    static CLMemMap::FlushFunc flush;
 };
