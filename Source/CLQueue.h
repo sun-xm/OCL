@@ -67,16 +67,12 @@ public:
 
     bool Execute(const CLKernel& kernel)
     {
-        cl_event event;
-        auto error = clEnqueueNDRangeKernel(this->queue, kernel, kernel.Dims(), nullptr, kernel.Global(), kernel.Local(), 0, nullptr, &event);
-        if (CL_SUCCESS != error)
+        if (!this->Execute(kernel, {}))
         {
             return false;
         }
-        
-        kernel.Event() = CLEvent(event);
-        clReleaseEvent(event);
-        kernel.Event().Wait();
+
+        kernel.Wait();
         return true;
     }
     bool Execute(const CLKernel& kernel, const std::initializer_list<CLEvent>& waits)

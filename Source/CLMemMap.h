@@ -51,7 +51,7 @@ public:
     {
         if (this->map)
         {
-            vector<cl_event> events;
+            std::vector<cl_event> events;
             for (auto& e : waits)
             {
                 if (e)

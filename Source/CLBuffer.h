@@ -67,7 +67,7 @@ public:
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, const std::initializer_list<CLEvent>& waits)
     {
         size_t bytes;
-        if (CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_SIZE,  sizeof(bytes), &bytes, nullptr))
+        if (CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_SIZE, sizeof(bytes), &bytes, nullptr))
         {
             return CLMemMap<T>(nullptr, nullptr, nullptr, nullptr);
         }
@@ -82,7 +82,7 @@ public:
             mflags |= CL_MAP_WRITE;
         }
         
-        vector<cl_event> events;
+        std::vector<cl_event> events;
         for (auto& e : waits)
         {
             if (e)
@@ -177,8 +177,9 @@ public:
                 throw std::runtime_error("Invalid memory creation flag");
         }
 
-        auto buf = clCreateBuffer(context, mflags, length * sizeof(T), nullptr, nullptr);
-        return CLBuffer(buf);
+        auto buffer = clCreateBuffer(context, mflags, length * sizeof(T), nullptr, nullptr);
+        ONCLEANUP(buffer, [=]{ if (buffer) clReleaseMemObject(buffer); });
+        return CLBuffer(buffer);
     }
 
 private:

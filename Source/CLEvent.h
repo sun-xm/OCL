@@ -26,6 +26,13 @@ public:
     {
         *this = other;
     }
+   ~CLEvent()
+    {
+       if (this->event)
+       {
+           clReleaseEvent(this->event);
+       }
+    }
 
     CLEvent& operator=(CLEvent&& other)
     {
