@@ -102,7 +102,7 @@ int main(int, char*[])
     }
     map.Wait();
 
-    cout << map[0] << ' ' << map[1] << ' ' << map[2] << endl;
+    cout << map[0] << ' ' << map[1] << ' ' << map[127] << endl;
 
     return 0;
 }

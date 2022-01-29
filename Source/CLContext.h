@@ -6,23 +6,142 @@
 #include "CLQueue.h"
 #include <iostream>
 #include <string>
+#include <vector>
 
 class CLContext
 {
-private:
-    CLContext(cl_context);
 public:
-    CLContext();
-    CLContext(CLContext&&);
-    CLContext(const CLContext&);
-   ~CLContext();
+    CLContext() : context(nullptr)
+    {
+    }
+    CLContext(cl_context context) : CLContext()
+    {
+        if (context && CL_SUCCESS == clRetainContext(context))
+        {
+            this->context = context;
+        }
+    }
+    CLContext(CLContext&& other) : CLContext()
+    {
+        *this = std::move(other);
+    }
+    CLContext(const CLContext& other) : CLContext()
+    {
+        *this = other;
+    }
+   ~CLContext()
+    {
+        if (this->context)
+        {
+            clReleaseContext(this->context);
+        }
+    }
 
-    CLContext& operator=(CLContext&&);
-    CLContext& operator=(const CLContext&);
+    CLContext& operator=(CLContext&& other)
+    {
+        cl_context context = this->context;
+        this->context = other.context;
+        other.context = context;
+        return *this;
+    }
+    CLContext& operator=(const CLContext& other)
+    {
+        if (other.context && CL_SUCCESS != clRetainContext(other.context))
+        {
+            throw std::runtime_error("Failed to retain context");
+        }
 
-    CLProgram CreateProgram(const char* source, const char* options, std::string& log);
-    CLProgram CreateProgram(std::istream& source, const char* options, std::string& log);
-    CLQueue   CreateQueue();
+        if (this->context)
+        {
+            clReleaseContext(this->context);
+        }
+        
+        this->context = other.context;
+        return *this;
+    }
+
+    CLProgram CreateProgram(const char* source, const char* options, std::string& log)
+    {
+        size_t size;
+        if (CL_SUCCESS != clGetContextInfo(this->context, CL_CONTEXT_DEVICES, 0, nullptr, &size))
+        {
+            log = "Failed to get context devices number";
+            return CLProgram();
+        }
+
+        std::vector<cl_device_id> devices(size / sizeof(cl_device_id));
+        if (devices.empty())
+        {
+            log = "No associated devices to context";
+            return CLProgram();
+        }
+
+        if (CL_SUCCESS != clGetContextInfo(this->context, CL_CONTEXT_DEVICES, size, &devices[0], nullptr))
+        {
+            log = "Failed to get context devices";
+            return CLProgram();
+        }
+
+        auto length = strlen(source);
+        cl_int error;
+
+        auto program = clCreateProgramWithSource(this->context, 1, &source, &length, &error);
+        if (CL_SUCCESS != error)
+        {
+            log = "Failed to create program";
+            return CLProgram();
+        }
+        ONCLEANUP(program, [=]{ clReleaseProgram(program); });
+
+        if (CL_SUCCESS != clBuildProgram(program, (cl_uint)devices.size(), devices.data(), options, nullptr, nullptr))
+        {
+            log = "Failed to build program\n";
+
+            for (auto device : devices)
+            {
+                cl_build_status status;
+                if (CL_SUCCESS != clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_STATUS, sizeof(status), &status, nullptr))
+                {
+                    log += "Failed to get program build status";
+                    break;
+                }
+
+                if (CL_BUILD_ERROR == status)
+                {
+                    if (CL_SUCCESS != clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, nullptr, &size))
+                    {
+                        log += "Failed to get program build log length";
+                        break;
+                    }
+
+                    std::string err;
+                    err.resize(size);
+
+                    if (CL_SUCCESS != clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, size, &err[0], nullptr))
+                    {
+                        log += "Failed to get program build log";
+                        break;
+                    }
+
+                    err.resize(err.size() - 1);
+                    log += err;
+                    break;
+                }
+            }
+
+            return CLProgram();
+        }
+
+        return CLProgram(program);
+    }
+    CLProgram CreateProgram(std::istream& source, const char* options, std::string& log)
+    {
+        return this->CreateProgram(std::string(std::istreambuf_iterator<char>(source), std::istreambuf_iterator<char>()).c_str(), options, log);
+    }
+    CLQueue   CreateQueue()
+    {
+        return CLQueue::Create(this->context);
+    }
 
     template<typename T>
     CLBuffer<T> CreateBuffer(uint32_t flags, size_t length)
@@ -40,7 +159,12 @@ public:
         return !!this->context;
     }
 
-    static CLContext Create(cl_device_id);
+    static CLContext Create(cl_device_id device)
+    {
+        cl_context context = clCreateContext(nullptr, 1, &device, nullptr, nullptr, nullptr);
+        ONCLEANUP(context, [=]{ if (context) clReleaseContext(context); });
+        return CLContext(context);
+    }
 
 private:
     cl_context context;

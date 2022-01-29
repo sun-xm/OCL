@@ -38,7 +38,7 @@ public:
 
     CLBuffer<T>& operator=(CLBuffer&& other)
     {
-        cl_mem mem = other.mem;
+        cl_mem mem = this->mem;
         this->mem = other.mem;
         other.mem = mem;
         return *this;
@@ -47,7 +47,7 @@ public:
     {
         if (other.mem && CL_SUCCESS != clRetainMemObject(other.mem))
         {
-            throw runtime_error("Failed to retain buffer");
+            throw std::runtime_error("Failed to retain buffer");
         }
 
         if (this->mem)
@@ -121,7 +121,7 @@ public:
         size_t size;
         if (CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_SIZE, sizeof(size), &size, nullptr))
         {
-            throw runtime_error("Faile dto get mem object size");
+            throw std::runtime_error("Faile dto get mem object size");
         }
 
         return size;
@@ -174,7 +174,7 @@ public:
             }
 
             default:
-                throw runtime_error("Invalid memory creation flag");
+                throw std::runtime_error("Invalid memory creation flag");
         }
 
         auto buf = clCreateBuffer(context, mflags, length * sizeof(T), nullptr, nullptr);

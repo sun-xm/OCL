@@ -2,22 +2,68 @@
 
 #include "CLBuffer.h"
 #include <initializer_list>
-#include <exception>
+#include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 class CLKernel
 {
-private:
-    CLKernel(cl_kernel);
 public:
-    CLKernel();
-    CLKernel(CLKernel&&);
-    CLKernel(const CLKernel&);
-   ~CLKernel();
+    CLKernel() : kernel(nullptr)
+    {
+    }
+    CLKernel(cl_kernel kernel) : CLKernel()
+    {
+        if (kernel && CL_SUCCESS == clRetainKernel(kernel))
+        {
+            this->kernel = kernel;
+        }
+    }
+    CLKernel(CLKernel&& other) : CLKernel()
+    {
+        *this = std::move(other);
+    }
+    CLKernel(const CLKernel& other) : CLKernel()
+    {
+        *this = other;
+    }
+   ~CLKernel()
+    {
+        if (this->kernel)
+        {
+            clReleaseKernel(this->kernel);
+        }
+    }
 
-    CLKernel& operator=(CLKernel&&);
-    CLKernel& operator=(const CLKernel&);
+    CLKernel& operator=(CLKernel&& other)
+    {
+        cl_kernel kernel = this->kernel;
+        this->kernel = other.kernel;
+        other.kernel = kernel;
+
+        this->event = std::move(other.event);
+
+        this->global.swap(other.global);
+        this->local.swap(other.local);
+
+        return *this;
+    }
+    CLKernel& operator=(const CLKernel& other)
+    {
+        if (other.kernel && CL_SUCCESS != clRetainKernel(other.kernel))
+        {
+            throw std::runtime_error("Failed to retain kernel");
+        }
+
+        if (this->kernel)
+        {
+            clReleaseKernel(this->kernel);
+        }
+
+        this->kernel = other.kernel;
+        return *this;
+    }
 
     CLEvent& Event() const
     {
@@ -28,7 +74,16 @@ public:
         return this->event;
     }
     
-    void Size(const std::initializer_list<size_t>& global, const std::initializer_list<size_t>& local = {});
+    void Wait() const
+    {
+        this->event.Wait();
+    }
+    
+    void Size(const std::initializer_list<size_t>& global, const std::initializer_list<size_t>& local = {})
+    {
+        this->global = global;
+        this->local  = local;
+    }
 
     const size_t* Global() const
     {
@@ -61,7 +116,12 @@ public:
         return !!this->kernel;
     }
 
-    static CLKernel Create(cl_program, const std::string&);
+    static CLKernel Create(cl_program program, const std::string& name)
+    {
+        auto kernel = clCreateKernel(program, name.c_str(), nullptr);
+        ONCLEANUP(kernel, [=]{ if(kernel) clReleaseKernel(kernel); });
+        return CLKernel(kernel);
+    }
 
 private:
     template<typename T>
