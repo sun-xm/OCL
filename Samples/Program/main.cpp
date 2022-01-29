@@ -92,7 +92,7 @@ int main(int, char*[])
     maps.Unmap();
 
     copy.Args(src, dst);
-    copy.Size({ src.Size() });
+    copy.Size({ src.Length() });
     if (!queue.Execute(copy))
     {
         cout << "Failed to enqueue kernel" << endl;

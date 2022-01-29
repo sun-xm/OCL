@@ -8,7 +8,10 @@ template<typename T>
 class CLMemMap
 {
 public:
-    CLMemMap(cl_mem mem, cl_command_queue queue, cl_event event, void* map) : map(nullptr), mem(nullptr), queue(nullptr)
+    CLMemMap() : map(nullptr), mem(nullptr), queue(nullptr)
+    {
+    }
+    CLMemMap(cl_mem mem, cl_command_queue queue, cl_event event, void* map) : CLMemMap()
     {
         if (mem && CL_SUCCESS == clRetainMemObject(mem))
         {
@@ -25,22 +28,33 @@ public:
             }
         }
     }
-    CLMemMap(CLMemMap&& other)
-    {
-        this->map = other.map;
-        this->mem = other.mem;
-        this->queue = other.que;
-        this->event = other.event;
-
-        other.map = nullptr;
-        other.mem = nullptr;
-        other.queue = nullptr;
-        other.event = CLEvent(nullptr);
-    }
+    CLMemMap(CLMemMap&& other) = delete;
+    CLMemMap(const CLMemMap&) = delete;
    ~CLMemMap()
     {
         this->Unmap({});
     }
+
+    CLMemMap& operator=(CLMemMap&& other)
+    {
+        auto map = this->map;
+        auto mem = this->mem;
+        auto que = this->queue;
+        auto evt = this->event;
+
+        this->map = other.map;
+        this->mem = other.mem;
+        this->queue = other.queue;
+        this->event = other.event;
+
+        other.map = map;
+        other.mem = mem;
+        other.queue = que;
+        other.event = evt;
+
+        return *this;
+    }
+    CLMemMap& operator=(const CLMemMap&) = delete;
 
     void Unmap()
     {

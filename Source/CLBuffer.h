@@ -10,14 +10,15 @@ template<typename T>
 class CLBuffer
 {
 public:
-    CLBuffer() : mem(nullptr)
+    CLBuffer() : mem(nullptr), len(0)
     {
     }
-    CLBuffer(cl_mem mem) : CLBuffer()
+    CLBuffer(cl_mem mem, size_t length) : CLBuffer()
     {
-        if (mem && CL_SUCCESS == clRetainMemObject(mem))
+        if (mem && length && CL_SUCCESS == clRetainMemObject(mem))
         {
             this->mem = mem;
+            this->len = length;
         }
     }
     CLBuffer(CLBuffer&& other) : CLBuffer()
@@ -39,8 +40,14 @@ public:
     CLBuffer<T>& operator=(CLBuffer&& other)
     {
         cl_mem mem = this->mem;
+        size_t len = this->len;
+
         this->mem = other.mem;
+        this->len = other.len;
+
         other.mem = mem;
+        other.len = len;
+
         return *this;
     }
     CLBuffer<T>& operator=(const CLBuffer& other)
@@ -56,6 +63,8 @@ public:
         }
 
         this->mem = other.mem;
+        this->len = other.len;
+        
         return *this;
     }
 
@@ -64,12 +73,20 @@ public:
         ONCLEANUP(wait, [this]{ this->Wait(); });
         return this->Map(queue, flags, {});
     }
+    CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, size_t offset, size_t length)
+    {
+        ONCLEANUP(wait, [this]{ this->Wait(); });
+        return this->Map(queue, flags, {}, offset, length);
+    }
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, const std::initializer_list<CLEvent>& waits)
     {
-        size_t bytes;
-        if (CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_SIZE, sizeof(bytes), &bytes, nullptr))
+        return this->Map(queue, flags, waits, 0, this->len);
+    }
+    CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, const std::initializer_list<CLEvent>& waits, size_t offset, size_t length)
+    {
+        if (!this->mem)
         {
-            return CLMemMap<T>(nullptr, nullptr, nullptr, nullptr);
+            return CLMemMap<T>();
         }
 
         cl_map_flags mflags = 0;
@@ -93,11 +110,11 @@ public:
 
         cl_int error;
         cl_event event;
-        auto map = clEnqueueMapBuffer(queue, this->mem, CL_FALSE, mflags, 0, bytes, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &error);
+        auto map = clEnqueueMapBuffer(queue, this->mem, CL_FALSE, mflags, offset * sizeof(T), length * sizeof(T), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &error);
 
         if (CL_SUCCESS != error)
         {
-            return CLMemMap<T>(nullptr, nullptr, nullptr, nullptr);
+            return CLMemMap<T>();
         }
 
         this->event = CLEvent(event);
@@ -111,24 +128,9 @@ public:
         this->event.Wait();
     }
 
-    size_t Size() const
-    {
-        if (!this->mem)
-        {
-            return 0;
-        }
-
-        size_t size;
-        if (CL_SUCCESS != clGetMemObjectInfo(this->mem, CL_MEM_SIZE, sizeof(size), &size, nullptr))
-        {
-            throw std::runtime_error("Faile dto get mem object size");
-        }
-
-        return size;
-    }
     size_t Length() const
     {
-        return this->Size() / sizeof(T);
+        return this->len;
     }
 
     CLEvent Event() const
@@ -179,12 +181,13 @@ public:
 
         auto buffer = clCreateBuffer(context, mflags, length * sizeof(T), nullptr, nullptr);
         ONCLEANUP(buffer, [=]{ if (buffer) clReleaseMemObject(buffer); });
-        return CLBuffer(buffer);
+        return CLBuffer(buffer, length);
     }
 
 private:
 
 private:
     cl_mem mem;
+    size_t len;
     mutable CLEvent event;
 };

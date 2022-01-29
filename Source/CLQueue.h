@@ -60,9 +60,19 @@ public:
         return buffer.Map(this->queue, flags);
     }
     template<typename T>
+    CLMemMap<T> Map(CLBuffer<T>& buffer, uint32_t flags, size_t offset, size_t length)
+    {
+        return buffer.Map(this->queue, flags, offset, length);
+    }
+    template<typename T>
     CLMemMap<T> Map(CLBuffer<T>& buffer, uint32_t flags, const std::initializer_list<CLEvent>& waits)
     {
         return buffer.Map(this->queue, flags, waits);
+    }
+    template<typename T>
+    CLMemMap<T> Map(CLBuffer<T>& buffer, uint32_t flags, const std::initializer_list<CLEvent>& waits, size_t offset, size_t length)
+    {
+        return buffer.Map(this->queue, flags, waits, offset, length);
     }
 
     bool Execute(const CLKernel& kernel)
