@@ -23,7 +23,12 @@ public:
     CLProgram CreateProgram(const char* source, const char* options, std::string& log);
     CLProgram CreateProgram(std::istream& source, const char* options, std::string& log);
     CLQueue   CreateQueue();
-    CLBuffer  CreateBuffer(uint32_t flags, size_t bytes);
+
+    template<typename T>
+    CLBuffer<T> CreateBuffer(uint32_t flags, size_t length)
+    {
+        return CLBuffer<T>::Create(this->context, flags, length);
+    }
 
     operator cl_context() const
     {

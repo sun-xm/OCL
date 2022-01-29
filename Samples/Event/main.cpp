@@ -59,16 +59,16 @@ int main(int, char*[])
         return 0;
     }
 
-    CLKernel init = program.CreateKernel("Init");
-    CLKernel copy = program.CreateKernel("Copy");
+    CLKernel init = program.CreateKernel("init");
+    CLKernel copy = program.CreateKernel("copy");
     if (!init || !copy)
     {
         cout << "Failed to create kernel" << endl;
         return 0;
     }
 
-    auto src = context.CreateBuffer(CLFlags::RW, 128 * sizeof(uint32_t));
-    auto dst = context.CreateBuffer(CLFlags::RO, src.Size());
+    auto src = context.CreateBuffer<uint32_t>(CLFlags::RW, 128);
+    auto dst = context.CreateBuffer<uint32_t>(CLFlags::RO, src.Length());
 
     if (!src || !dst)
     {
@@ -77,7 +77,7 @@ int main(int, char*[])
     }
 
     init.Args(src);
-    init.Size({ src.Size() / sizeof(uint32_t) });
+    init.Size({ src.Length() });
 
     if (!queue.Execute(init, {}))
     {
@@ -86,7 +86,7 @@ int main(int, char*[])
     }
 
     copy.Args(src, dst);
-    copy.Size({ src.Size() / sizeof(uint32_t) });
+    copy.Size({ src.Length() });
 
     if (!queue.Execute(copy, { init }))
     {
@@ -100,9 +100,9 @@ int main(int, char*[])
         cout << "Failed to map buffer" << endl;
         return 0;
     }
+    map.Wait();
 
-    auto mapped = map.Get<uint32_t>({ map });
-    cout << mapped[0] << ' ' << mapped[1] << ' ' << mapped[2] << endl;
+    cout << map[0] << ' ' << map[1] << ' ' << map[2] << endl;
 
     return 0;
 }

@@ -61,15 +61,15 @@ int main(int, char*[])
         return 0;
     }
 
-    CLKernel copy = program.CreateKernel("Copy");
+    CLKernel copy = program.CreateKernel("copy");
     if (!copy)
     {
         cout << "Failed to create kernel" << endl;
         return 0;
     }
 
-    auto src = context.CreateBuffer(CLFlags::RO, SIZE);
-    auto dst = context.CreateBuffer(CLFlags::RW, src.Size());
+    auto src = context.CreateBuffer<uint8_t>(CLFlags::RO, SIZE);
+    auto dst = context.CreateBuffer<uint8_t>(CLFlags::RW, src.Length());
 
     if (!src || !dst)
     {
@@ -84,11 +84,10 @@ int main(int, char*[])
         return 0;
     }
 
-    auto mapped = maps.Get<uint8_t>();
-    auto size = src.Size();
-    for (size_t i = 0; i < size; i++)
+    auto length = src.Length();
+    for (size_t i = 0; i < length; i++)
     {
-        mapped[i] = (uint8_t)i;
+        maps[i] = (uint8_t)i;
     }
     maps.Unmap();
 
@@ -107,8 +106,7 @@ int main(int, char*[])
         return 0;
     }
 
-    mapped = mapd.Get<uint8_t>();
-    cout << (int)mapped[0] << ' ' << (int)mapped[1] << ' ' << (int)mapped[2] << endl;
+    cout << (int)mapd[0] << ' ' << (int)mapd[1] << ' ' << (int)mapd[127] << endl;
 
     return 0;
 }

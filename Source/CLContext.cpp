@@ -147,11 +147,6 @@ CLQueue CLContext::CreateQueue()
     return CLQueue::Create(*this);
 }
 
-CLBuffer CLContext::CreateBuffer(uint32_t flags, size_t bytes)
-{
-    return CLBuffer::Create(this->context, flags, bytes);
-}
-
 CLContext CLContext::Create(cl_device_id device)
 {
     cl_int err;

@@ -62,16 +62,6 @@ CLQueue& CLQueue::operator=(const CLQueue& other)
     return *this;
 }
 
-CLMemMap CLQueue::Map(CLBuffer& buffer, uint32_t flags)
-{
-    return buffer.Map(this->queue, flags);
-}
-
-CLMemMap CLQueue::Map(CLBuffer& buffer, uint32_t flags, const initializer_list<CLEvent>& waitList)
-{
-    return buffer.Map(this->queue, flags, waitList);
-}
-
 bool CLQueue::Execute(const CLKernel& kernel)
 {
     cl_event event;

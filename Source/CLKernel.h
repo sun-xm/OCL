@@ -64,7 +64,8 @@ public:
     static CLKernel Create(cl_program, const std::string&);
 
 private:
-    bool SetArgs(cl_uint index, const CLBuffer& buffer)
+    template<typename T>
+    bool SetArgs(cl_uint index, const CLBuffer<T>& buffer)
     {
         auto mem = (cl_mem)buffer;
         return CL_SUCCESS == clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
@@ -76,8 +77,8 @@ private:
         return CL_SUCCESS == clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
     }
 
-    template<typename... Tx>
-    bool SetArgs(cl_uint index, const CLBuffer& buffer, const Tx&... args)
+    template<typename T, typename... Tx>
+    bool SetArgs(cl_uint index, const CLBuffer<T>& buffer, const Tx&... args)
     {
         auto mem = (cl_mem)buffer;
         if (CL_SUCCESS != clSetKernelArg(this->kernel, index, sizeof(mem), &mem))

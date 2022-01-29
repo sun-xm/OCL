@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CLKernel.h"
-#include "CLBuffer.h"
 
 class CLQueue
 {
@@ -15,9 +14,17 @@ public:
 
     CLQueue& operator=(CLQueue&&);
     CLQueue& operator=(const CLQueue&);
-    
-    CLMemMap Map(CLBuffer&, uint32_t flags);
-    CLMemMap Map(CLBuffer&, uint32_t flags, const std::initializer_list<CLEvent>&);
+
+    template<typename T>
+    CLMemMap<T> Map(CLBuffer<T>& buffer, uint32_t flags)
+    {
+        return buffer.Map(this->queue, flags);
+    }
+    template<typename T>
+    CLMemMap<T> Map(CLBuffer<T>& buffer, uint32_t flags, const std::initializer_list<CLEvent>& waits)
+    {
+        return buffer.Map(this->queue, flags, waits);
+    }
 
     bool Execute(const CLKernel&);
     bool Execute(const CLKernel&, const std::initializer_list<CLEvent>&);

@@ -1,33 +1,99 @@
 #pragma once
 
 #include "CLEvent.h"
-#include <CL/cl.h>
-#include <cstdint>
-#include <functional>
+#include <cassert>
 #include <initializer_list>
-#include <vector>
 
+template<typename T>
 class CLMemMap
 {
 public:
-    CLMemMap(cl_mem, cl_command_queue, cl_event, void*);
-    CLMemMap(CLMemMap&&);
-    CLMemMap(const CLMemMap&) = delete;
-   ~CLMemMap();
-
-    CLMemMap& operator=(const CLMemMap&) = delete;
-    CLMemMap& operator=(CLMemMap&&) = delete;
-
-    void Unmap();
-    void Unmap(const std::initializer_list<CLEvent>&);
-
-    const CLEvent& Event() const
+    CLMemMap(cl_mem mem, cl_command_queue queue, cl_event event, void* map) : map(nullptr), mem(nullptr), queue(nullptr)
     {
-        return this->event;
+        if (mem && CL_SUCCESS == clRetainMemObject(mem))
+        {
+            if (queue && CL_SUCCESS == clRetainCommandQueue(queue))
+            {
+                this->map = map;
+                this->mem = mem;
+                this->queue = queue;
+                this->event = CLEvent(event);
+            }
+            else
+            {
+                clReleaseMemObject(mem);
+            }
+        }
     }
-    operator const CLEvent() const
+    CLMemMap(CLMemMap&& other)
     {
-        return this->event;
+        this->map = other.map;
+        this->mem = other.mem;
+        this->queue = other.que;
+        this->event = other.event;
+
+        other.map = nullptr;
+        other.mem = nullptr;
+        other.queue = nullptr;
+        other.event = CLEvent(nullptr);
+    }
+   ~CLMemMap()
+    {
+        this->Unmap({});
+    }
+
+    void Unmap()
+    {
+        this->Unmap({});
+        this->Wait();
+    }
+    void Unmap(const std::initializer_list<CLEvent>& waits)
+    {
+        if (this->map)
+        {
+            vector<cl_event> events;
+            for (auto& e : waits)
+            {
+                if (e)
+                {
+                    events.push_back(e);
+                }
+            }
+
+            cl_event event;
+            auto err = clEnqueueUnmapMemObject(this->queue, this->mem, this->map, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+            assert(CL_SUCCESS == err);
+            this->map = nullptr;
+
+            this->event = CLEvent(event);
+            clReleaseEvent(event);
+        }
+
+        if (this->mem)
+        {
+            clReleaseMemObject(this->mem);
+            this->mem = nullptr;
+        }
+
+        if (this->queue)
+        {
+            clReleaseCommandQueue(this->queue);
+            this->queue = nullptr;
+        }
+    }
+
+    void Wait() const
+    {
+        this->event.Wait();
+    }
+
+    T& operator[](size_t index)
+    {
+        return ((T*)this->map)[index];
+    }
+    const T& operator[](size_t index) const
+    {
+        return ((T*)this->map)[index];
     }
 
     operator bool() const
@@ -35,25 +101,10 @@ public:
         return !!this->mem;
     }
 
-    template<typename T>
-    T* Get(const std::initializer_list<CLEvent>& waitList = {})
-    {
-        return (T*)this->Get(waitList);
-    }
-
-    template<typename T>
-    const T* Get(const std::initializer_list<CLEvent>& waitList = {}) const
-    {
-        return (T*)this->Get(waitList);
-    }
-
-private:
-    void* Get(const std::initializer_list<CLEvent>&);
-
 private:
     void*  map;
     cl_mem mem;
-    cl_command_queue que;
-    
-    mutable CLEvent event;
+    cl_command_queue queue;
+
+    CLEvent event;
 };
