@@ -4,9 +4,11 @@
 #include "CLContext.h"
 #include "CLCommon.h"
 #include "CLFlags.h"
+#include "Float3.cl"
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 #define SIZE    (128)
 
@@ -46,15 +48,25 @@ int main(int, char*[])
         return 0;
     }
 
-    ifstream source("build/Program.cl");
-    if (!source.is_open())
+    ostringstream source;
+
+    ifstream file;
+    if (!(file = ifstream("build/Float3.cl")).is_open())
     {
-        cout << "Failed to open source file" << endl;
+        cout << "Failed to open Float3.cl" << endl;
         return 0;
     }
+    source << string(istreambuf_iterator<char>(file), istreambuf_iterator<char>()) << endl;
+
+    if (!(file = ifstream("build/Program.cl")).is_open())
+    {
+        cout << "Failed to open build/Program.cl" << endl;
+        return 0;
+    }
+    source << string(istreambuf_iterator<char>(file), istreambuf_iterator<char>()) << endl;
 
     string log;
-    CLProgram program = context.CreateProgram(source, "", log);
+    CLProgram program = context.CreateProgram(source.str().c_str(), "", log);
     if (!program)
     {
         cout << log << endl;
@@ -68,8 +80,8 @@ int main(int, char*[])
         return 0;
     }
 
-    auto src = context.CreateBuffer<uint8_t>(CLFlags::RO, SIZE);
-    auto dst = context.CreateBuffer<uint8_t>(CLFlags::RW, src.Length());
+    auto src = context.CreateBuffer<Float3>(CLFlags::RO, SIZE);
+    auto dst = context.CreateBuffer<Float3>(CLFlags::RW, src.Length());
 
     if (!src || !dst)
     {
@@ -87,7 +99,7 @@ int main(int, char*[])
     auto length = src.Length();
     for (size_t i = 0; i < length; i++)
     {
-        maps[i] = (uint8_t)i;
+        maps[i] = { (float)i, (float)i, (float)i };
     }
     maps.Unmap();
 
@@ -106,7 +118,11 @@ int main(int, char*[])
         return 0;
     }
 
-    cout << (int)mapd[0] << ' ' << (int)mapd[1] << ' ' << (int)mapd[127] << endl;
+    auto f3 = mapd[0];
+    cout << f3.X << ' ' << f3.Y << ' ' << f3.Z << endl;
+
+    f3 = mapd[dst.Length() - 1];
+    cout << f3.X << ' ' << f3.Y << ' ' << f3.Z << endl;
 
     return 0;
 }
