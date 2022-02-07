@@ -1,5 +1,5 @@
-#ifndef _FLOAT3_H_
-#define _FLOAT3_H_
+#ifndef _FLOAT3_CL_
+#define _FLOAT3_CL_
 
 typedef struct _Float3
 {

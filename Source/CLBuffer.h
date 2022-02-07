@@ -76,13 +76,13 @@ public:
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, size_t offset, size_t length)
     {
         ONCLEANUP(wait, [this]{ this->Wait(); });
-        return this->Map(queue, flags, {}, offset, length);
+        return this->Map(queue, flags, offset, length, {});
     }
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, const std::initializer_list<CLEvent>& waits)
     {
-        return this->Map(queue, flags, waits, 0, this->len);
+        return this->Map(queue, flags, 0, this->len, waits);
     }
-    CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, const std::initializer_list<CLEvent>& waits, size_t offset, size_t length)
+    CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, size_t offset, size_t length, const std::initializer_list<CLEvent>& waits)
     {
         if (!this->mem)
         {
@@ -121,6 +121,74 @@ public:
         clReleaseEvent(event);
 
         return CLMemMap<T>(this->mem, queue, event, map);
+    }
+
+    bool Read(cl_command_queue queue, T* host) const
+    {
+        return this->Read(queue, 0, this->len, host);
+    }
+    bool Read(cl_command_queue queue, size_t offset, size_t length, T* host) const
+    {
+        ONCLEANUP(wait, [this]{ this->Wait(); });
+        return this->Read(queue, offset, length, host, {});
+    }
+    bool Read(cl_command_queue queue, T* host, const std::initializer_list<CLEvent>& waits) const
+    {
+        return this->Read(queue, 0, this->len, host, waits);
+    }
+    bool Read(cl_command_queue queue, size_t offset, size_t length, T* host, const std::initializer_list<CLEvent>& waits) const
+    {
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        cl_event event;
+        if (CL_SUCCESS != clEnqueueReadBuffer(queue, this->mem, CL_FALSE, offset * sizeof(T), length * sizeof(T), host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event))
+        {
+            return false;
+        }
+
+        this->event = CLEvent(event);
+        return true;
+    }
+
+    bool Write(cl_command_queue queue, const T* host)
+    {
+        return this->Write(queue, 0, this->len, host);
+    }
+    bool Write(cl_command_queue queue, size_t offset, size_t length, const T* host)
+    {
+        ONCLEANUP(wait, [this]{ this->Wait(); });
+        return this->Write(queue, offset, length, host, {});
+    }
+    bool Write(cl_command_queue queue, const T* host, const std::initializer_list<CLEvent>& waits)
+    {
+        return this->Write(queue, 0, this->len, host, waits);
+    }
+    bool Write(cl_command_queue queue, size_t offset, size_t length, const T* host, const std::initializer_list<CLEvent>& waits)
+    {
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        cl_event event;
+        if (CL_SUCCESS != clEnqueueWriteBuffer(queue, this->mem, CL_FALSE, offset * sizeof(T), length * sizeof(T), host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event))
+        {
+            return false;
+        }
+
+        this->event = CLEvent(event);
+        return true;
     }
 
     void Wait() const

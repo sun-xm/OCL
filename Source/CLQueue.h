@@ -75,6 +75,48 @@ public:
         return buffer.Map(this->queue, flags, waits, offset, length);
     }
 
+    template<typename T>
+    bool Read(const CLBuffer<T>& buffer, T* host)
+    {
+        return buffer.Read(this->queue, host);
+    }
+    template<typename T>
+    bool Read(const CLBuffer<T>& buffer, size_t offset, size_t length, T* host)
+    {
+        return buffer.Read(this->queue, offset, length, host);
+    }
+    template<typename T>
+    bool Read(const CLBuffer<T>& buffer, T* host, const std::initializer_list<CLEvent>& waits)
+    {
+        return buffer.Read(this->queue, host, waits);
+    }
+    template<typename T>
+    bool Read(const CLBuffer<T>& buffer, size_t offset, size_t length, T* host, const std::initializer_list<CLEvent&>& waits)
+    {
+        return buffer.Read(this->queue, offset, length, host, waits);
+    }
+
+    template<typename T>
+    bool Write(CLBuffer<T>& buffer, const T* host)
+    {
+        return buffer.Write(this->queue, host);
+    }
+    template<typename T>
+    bool Write(CLBuffer<T>& buffer, size_t offset, size_t length, const T* host)
+    {
+        return buffer.Write(this->queue, offset, length, host);
+    }
+    template<typename T>
+    bool Write(CLBuffer<T>& buffer, const T* host, const std::initializer_list<CLEvent>& waits)
+    {
+        return buffer.Write(this->queue, host, waits);
+    }
+    template<typename T>
+    bool Write(CLBuffer<T>& buffer, size_t offset, size_t length, const T* host, const std::initializer_list<CLEvent>& waits)
+    {
+        return buffer.Write(this->queue, offset, length, host, waits);
+    }
+
     bool Execute(const CLKernel& kernel)
     {
         if (!this->Execute(kernel, {}))
