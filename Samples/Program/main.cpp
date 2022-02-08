@@ -16,25 +16,7 @@ using namespace std;
 
 int main(int, char*[])
 {
-    auto platforms = CLPlatform::Platforms();
-    if (platforms.empty())
-    {
-        cout << "No available opencl platform found" << endl;
-        return 0;
-    }
-    auto platform = platforms[0];
-
-    auto devices = platform.Devices();
-    if (devices.empty())
-    {
-        cout << "No available opencl device found" << endl;
-        return 0;
-    }
-    auto device = devices[0];
-
-    cout << "Using platform: " << platform.Name() << ", device: " << device.Name() << endl;
-
-    auto context = CLContext::Create(device);
+    auto context = CLContext::CreateDefault();
     if (!context)
     {
         cout << "Failed to create opencl context" << endl;

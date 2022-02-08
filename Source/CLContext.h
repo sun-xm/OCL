@@ -2,6 +2,7 @@
 
 #include "CLBuffer.h"
 #include "CLDevice.h"
+#include "CLPlatform.h"
 #include "CLProgram.h"
 #include "CLQueue.h"
 #include <iostream>
@@ -164,6 +165,22 @@ public:
         cl_context context = clCreateContext(nullptr, 1, &device, nullptr, nullptr, nullptr);
         ONCLEANUP(context, [=]{ if (context) clReleaseContext(context); });
         return CLContext(context);
+    }
+    static CLContext CreateDefault()
+    {
+        auto platforms = CLPlatform::Platforms();
+        if (platforms.empty())
+        {
+            return CLContext();
+        }
+
+        auto devices = platforms[0].Devices();
+        if (devices.empty())
+        {
+            return CLContext();
+        }
+
+        return Create(devices[0]);
     }
 
 private:
