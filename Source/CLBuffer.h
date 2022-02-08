@@ -123,6 +123,40 @@ public:
         return CLMemMap<T>(this->mem, queue, event, map);
     }
 
+    bool Copy(cl_command_queue queue, const CLBuffer<T>& source)
+    {
+        return this->Copy(queue, source, 0, 0, this->len < source.len ? this->len : source.len);
+    }
+    bool Copy(cl_command_queue queue, const CLBuffer<T>& source, size_t srcoff, size_t dstoff, size_t length)
+    {
+        ONCLEANUP(wait, [this]{ this->Wait(); });
+        return this->Copy(queue, source, srcoff, dstoff, length, {});
+    }
+    bool Copy(cl_command_queue queue, const CLBuffer<T>& source, const std::initializer_list<CLEvent>& waits)
+    {
+        return this->Copy(queue, source, 0, 0, this->len < source.len ? this->len : source.len, waits);
+    }
+    bool Copy(cl_command_queue queue, const CLBuffer<T>& source, size_t srcoff, size_t dstoff, size_t length, const std::initializer_list<CLEvent>& waits)
+    {
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        cl_event event;
+        if (CL_SUCCESS != clEnqueueCopyBuffer(queue, source, this->mem, srcoff * sizeof(T), dstoff * sizeof(T), length * sizeof(T), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event))
+        {
+            return false;
+        }
+
+        this->event = CLEvent(event);
+        return true;
+    }
+
     bool Read(cl_command_queue queue, T* host) const
     {
         return this->Read(queue, 0, this->len, host);
