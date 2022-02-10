@@ -101,6 +101,15 @@ public:
         this->event.Wait();
     }
 
+    CLEvent Event() const
+    {
+        return this->event;
+    }
+    operator CLEvent&() const
+    {
+        return this->event;
+    }
+
     T& operator[](size_t index)
     {
         return ((T*)this->map)[index];
@@ -120,5 +129,5 @@ private:
     cl_mem mem;
     cl_command_queue queue;
 
-    CLEvent event;
+    mutable CLEvent event;
 };

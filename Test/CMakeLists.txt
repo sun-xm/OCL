@@ -1,0 +1,20 @@
+cmake_minimum_required(VERSION 3.10)
+project(Test)
+
+add_executable(ContextCreate   Test.cpp ContextCreate.cpp)
+add_executable(BufferMapCopy   Test.cpp BufferMapCopy.cpp)
+add_executable(BufferReadWrite Test.cpp BufferReadWrite.cpp)
+add_executable(KernelExecute   Test.cpp KernelExecute.cpp)
+add_executable(EventMapCopy    Test.cpp EventMapCopy.cpp)
+add_executable(EventReadWrite  Test.cpp EventReadWrite.cpp)
+add_executable(EventExecute    Test.cpp EventExecute.cpp)
+
+add_custom_command(TARGET ContextCreate POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_LIST_DIR}/program.cl" "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/")
+
+add_test(NAME Context.Create   COMMAND ContextCreate   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/")
+add_test(NAME Buffer.MapCopy   COMMAND BufferMapCopy   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/")
+add_test(NAME Buffer.ReadWrite COMMAND BufferReadWrite WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/")
+add_test(NAME Kernel.Execute   COMMAND KernelExecute   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/")
+add_test(NAME Event.MapCopy    COMMAND EventMapCopy    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/")
+add_test(NAME Event.ReadWrite  COMMAND EventReadWrite  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/")
+add_test(NAME Event.Execute    COMMAND EventExecute    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/")
