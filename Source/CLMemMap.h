@@ -2,7 +2,6 @@
 
 #include "CLEvent.h"
 #include <cassert>
-#include <initializer_list>
 
 template<typename T>
 class CLMemMap
@@ -61,7 +60,7 @@ public:
         this->Unmap({});
         this->Wait();
     }
-    void Unmap(const std::initializer_list<CLEvent>& waits)
+    void Unmap(const std::vector<CLEvent>& waits)
     {
         if (this->map)
         {

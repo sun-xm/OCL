@@ -65,12 +65,12 @@ public:
         return buffer.Map(this->queue, flags, offset, length);
     }
     template<typename T>
-    CLMemMap<T> Map(CLBuffer<T>& buffer, uint32_t flags, const std::initializer_list<CLEvent>& waits)
+    CLMemMap<T> Map(CLBuffer<T>& buffer, uint32_t flags, const std::vector<CLEvent>& waits)
     {
         return buffer.Map(this->queue, flags, waits);
     }
     template<typename T>
-    CLMemMap<T> Map(CLBuffer<T>& buffer, uint32_t flags, const std::initializer_list<CLEvent>& waits, size_t offset, size_t length)
+    CLMemMap<T> Map(CLBuffer<T>& buffer, uint32_t flags, const std::vector<CLEvent>& waits, size_t offset, size_t length)
     {
         return buffer.Map(this->queue, flags, waits, offset, length);
     }
@@ -86,12 +86,12 @@ public:
         return dst.Copy(this->queue, src, srcoff, dstoff, length);
     }
     template<typename T>
-    bool Copy(const CLBuffer<T>& src, CLBuffer<T>& dst, const std::initializer_list<CLEvent>& waits)
+    bool Copy(const CLBuffer<T>& src, CLBuffer<T>& dst, const std::vector<CLEvent>& waits)
     {
         return dst.Copy(this->queue, src, waits);
     }
     template<typename T>
-    bool Copy(const CLBuffer<T>& src, CLBuffer<T>& dst, size_t srcoff, size_t dstoff, size_t length, const std::initializer_list<CLEvent>& waits)
+    bool Copy(const CLBuffer<T>& src, CLBuffer<T>& dst, size_t srcoff, size_t dstoff, size_t length, const std::vector<CLEvent>& waits)
     {
         return dst.Copy(this->queue, src, srcoff, dstoff, length, waits);
     }
@@ -107,12 +107,12 @@ public:
         return buffer.Read(this->queue, offset, length, host);
     }
     template<typename T>
-    bool Read(const CLBuffer<T>& buffer, T* host, const std::initializer_list<CLEvent>& waits)
+    bool Read(const CLBuffer<T>& buffer, T* host, const std::vector<CLEvent>& waits)
     {
         return buffer.Read(this->queue, host, waits);
     }
     template<typename T>
-    bool Read(const CLBuffer<T>& buffer, size_t offset, size_t length, T* host, const std::initializer_list<CLEvent&>& waits)
+    bool Read(const CLBuffer<T>& buffer, size_t offset, size_t length, T* host, const std::vector<CLEvent&>& waits)
     {
         return buffer.Read(this->queue, offset, length, host, waits);
     }
@@ -128,12 +128,12 @@ public:
         return buffer.Write(this->queue, offset, length, host);
     }
     template<typename T>
-    bool Write(CLBuffer<T>& buffer, const T* host, const std::initializer_list<CLEvent>& waits)
+    bool Write(CLBuffer<T>& buffer, const T* host, const std::vector<CLEvent>& waits)
     {
         return buffer.Write(this->queue, host, waits);
     }
     template<typename T>
-    bool Write(CLBuffer<T>& buffer, size_t offset, size_t length, const T* host, const std::initializer_list<CLEvent>& waits)
+    bool Write(CLBuffer<T>& buffer, size_t offset, size_t length, const T* host, const std::vector<CLEvent>& waits)
     {
         return buffer.Write(this->queue, offset, length, host, waits);
     }
@@ -148,7 +148,7 @@ public:
         kernel.Wait();
         return true;
     }
-    bool Execute(const CLKernel& kernel, const std::initializer_list<CLEvent>& waits)
+    bool Execute(const CLKernel& kernel, const std::vector<CLEvent>& waits)
     {
         std::vector<cl_event> events;
         for (auto& e : waits)

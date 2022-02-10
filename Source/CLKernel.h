@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CLBuffer.h"
-#include <initializer_list>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -79,7 +78,7 @@ public:
         this->event.Wait();
     }
     
-    void Size(const std::initializer_list<size_t>& global, const std::initializer_list<size_t>& local = {})
+    void Size(const std::vector<size_t>& global, const std::vector<size_t>& local = {})
     {
         this->global = global;
         this->local  = local;
