@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CLCommon.h"
+#include "CLFlags.h"
 #include "CLMemMap.h"
 #include <cstdint>
 #include <stdexcept>

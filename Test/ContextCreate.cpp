@@ -1,5 +1,3 @@
-#pragma comment(lib, "OpenCL.lib")
-
 #include "CLContext.h"
 #include "CLPlatform.h"
 #include <iostream>

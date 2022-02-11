@@ -27,7 +27,10 @@ public:
             }
         }
     }
-    CLMemMap(CLMemMap&& other) = delete;
+    CLMemMap(CLMemMap&& other) : CLMemMap()
+    {
+        *this = std::move(other);
+    }
     CLMemMap(const CLMemMap&) = delete;
    ~CLMemMap()
     {

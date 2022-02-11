@@ -1,5 +1,3 @@
-#pragma comment(lib, "OpenCL.lib")
-
 #include "Test.h"
 
 using namespace std;
