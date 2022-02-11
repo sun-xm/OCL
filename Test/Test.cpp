@@ -12,6 +12,60 @@ Test::Test()
     }
 }
 
+int Test::ContextCreate()
+{
+    for (auto& p : CLPlatform::Platforms())
+    {
+        cout << "Platform: " << p.Name()       << endl;
+        cout << "Version:  " << p.Version()    << endl;
+        cout << "Vendor:   " << p.Vendor()     << endl;
+        cout << "Profile:  " << p.Profile()    << endl;
+        cout << "Extends:  " << p.Extensions() << endl;
+
+        for (auto& d : p.Devices())
+        {
+            cout << "Device:  " << d.Name() << endl;
+            cout << "Driver:  " << d.Driver() << endl;
+            cout << "Vendor:  " << d.Vendor() << endl;
+            cout << "Version: " << d.Version() << endl;
+            cout << "Profile: " << d.Profile() << endl;
+            cout << "Extends: " << d.Extensions() << endl;
+        }
+    }
+
+    auto context = CLContext::CreateDefault();
+    if (!context)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+int Test::ContextDevice()
+{
+    auto context = CLContext::CreateDefault();
+    if (!context)
+    {
+        return -1;
+    }
+
+    auto device = context.Device();
+    if (!device)
+    {
+        return -1;
+    }
+
+    cout << "Device:  " << device.Name() << endl;
+    cout << "Driver:  " << device.Driver() << endl;
+    cout << "Vendor:  " << device.Vendor() << endl;
+    cout << "Version: " << device.Version() << endl;
+    cout << "Profile: " << device.Profile() << endl;
+    cout << "Extends: " << device.Extensions() << endl;
+
+    return 0;
+}
+
 int Test::BufferMapCopy()
 {
     if (!*this)

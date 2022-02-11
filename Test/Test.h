@@ -8,6 +8,8 @@ class Test
 public:
     Test();
 
+    int ContextCreate();
+    int ContextDevice();
     int BufferMapCopy();
     int BufferReadWrite();
     int KernelExecute();
