@@ -150,6 +150,28 @@ public:
         return CLBuffer<T>::Create(this->context, flags, length);
     }
 
+    CLDevice Device() const
+    {
+        if (!this->context)
+        {
+            return CLDevice(nullptr);
+        }
+
+        cl_uint num;
+        if (CL_SUCCESS != clGetContextInfo(this->context, CL_CONTEXT_NUM_DEVICES, sizeof(num), &num, nullptr) || !num)
+        {
+            return CLDevice(nullptr);
+        }
+
+        std::vector<cl_device_id> ids(num);
+        if (CL_SUCCESS != clGetContextInfo(this->context, CL_CONTEXT_DEVICES, ids.size() * sizeof(ids[0]), &ids[0], nullptr))
+        {
+            return CLDevice(nullptr);
+        }
+
+        return CLDevice(ids[0]);
+    }
+
     operator cl_context() const
     {
         return this->context;
