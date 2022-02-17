@@ -247,10 +247,15 @@ int Test::EventMapCopy()
         return -1;
     }
 
+    // Have to wait mapping finish even with write-only flag on Nvidia.
+    // Mapped write-only memory is cleared with zeros through mapping. Not understandable.
+    map.Wait();
+
     for (size_t i = 0; i < src.Length(); i++)
     {
         map[i] = (int)i;
     }
+
     map.Unmap({ map });
 
     auto dst = this->context.CreateBuffer<int>(CLFlags::WO, length);
@@ -264,7 +269,7 @@ int Test::EventMapCopy()
         return -1;
     }
 
-    if (!(map = this->queue.Map(dst, CLFlags::RO, { dst })))
+    if (!(map = this->queue.Map(dst, CLFlags::RW, { dst })))
     {
         return -1;
     }
@@ -272,6 +277,7 @@ int Test::EventMapCopy()
 
     for (size_t i = 0; i < length; i++)
     {
+        auto m = map[i];
         if (map[i] != (int)i)
         {
             return -1;
@@ -345,6 +351,10 @@ int Test::EventExecute()
     {
         return -1;
     }
+
+    // Have to wait mapping finish even with write-only flag on Nvidia.
+    // Mapped write-only memory is cleared with zeros through mapping. Not understandable.
+    map.Wait();
 
     for (size_t i = 0; i < length; i++)
     {

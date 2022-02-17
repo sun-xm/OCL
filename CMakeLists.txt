@@ -7,7 +7,7 @@ set(SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/Source)
 include_directories($ENV{OPENCL_PATH}/include ${SOURCE_DIR})
 
 if(CMAKE_GENERATOR MATCHES "Visual Studio")
-    link_directories($ENV{OPENCL_PATH}/lib/$(PlatformShortName))
+    link_directories($ENV{OPENCL_PATH}/lib/$(Platform) $ENV{OPENCL_PATH}/lib/$(PlatformShortName))
     add_link_options(/DYNAMICBASE OpenCL.lib)
 elseif(CMAKE_GENERATOR MATCHES "MinGW")
     find_library(OPENCL_LIB NAMES OpenCL PATHS $ENV{OPENCL_PATH}/lib/x64 REQUIRED)
