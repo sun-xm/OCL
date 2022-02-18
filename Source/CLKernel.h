@@ -68,9 +68,9 @@ public:
     {
         return this->event;
     }
-    operator CLEvent&() const
+    operator cl_event() const
     {
-        return this->event;
+        return (cl_event)this->event;
     }
     
     void Wait() const

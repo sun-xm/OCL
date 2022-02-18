@@ -79,11 +79,11 @@ public:
         ONCLEANUP(wait, [this]{ this->Wait(); });
         return this->Map(queue, flags, offset, length, {});
     }
-    CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, const std::vector<CLEvent>& waits)
+    CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, const std::vector<cl_event>& waits)
     {
         return this->Map(queue, flags, 0, this->len, waits);
     }
-    CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, size_t offset, size_t length, const std::vector<CLEvent>& waits)
+    CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, size_t offset, size_t length, const std::vector<cl_event>& waits)
     {
         if (!this->mem)
         {
@@ -133,11 +133,11 @@ public:
         ONCLEANUP(wait, [this]{ this->Wait(); });
         return this->Copy(queue, source, srcoff, dstoff, length, {});
     }
-    bool Copy(cl_command_queue queue, const CLBuffer<T>& source, const std::vector<CLEvent>& waits)
+    bool Copy(cl_command_queue queue, const CLBuffer<T>& source, const std::vector<cl_event>& waits)
     {
         return this->Copy(queue, source, 0, 0, this->len < source.len ? this->len : source.len, waits);
     }
-    bool Copy(cl_command_queue queue, const CLBuffer<T>& source, size_t srcoff, size_t dstoff, size_t length, const std::vector<CLEvent>& waits)
+    bool Copy(cl_command_queue queue, const CLBuffer<T>& source, size_t srcoff, size_t dstoff, size_t length, const std::vector<cl_event>& waits)
     {
         std::vector<cl_event> events;
         for (auto& e : waits)
@@ -167,11 +167,11 @@ public:
         ONCLEANUP(wait, [this]{ this->Wait(); });
         return this->Read(queue, offset, length, host, {});
     }
-    bool Read(cl_command_queue queue, T* host, const std::vector<CLEvent>& waits) const
+    bool Read(cl_command_queue queue, T* host, const std::vector<cl_event>& waits) const
     {
         return this->Read(queue, 0, this->len, host, waits);
     }
-    bool Read(cl_command_queue queue, size_t offset, size_t length, T* host, const std::vector<CLEvent>& waits) const
+    bool Read(cl_command_queue queue, size_t offset, size_t length, T* host, const std::vector<cl_event>& waits) const
     {
         std::vector<cl_event> events;
         for (auto& e : waits)
@@ -201,11 +201,11 @@ public:
         ONCLEANUP(wait, [this]{ this->Wait(); });
         return this->Write(queue, offset, length, host, {});
     }
-    bool Write(cl_command_queue queue, const T* host, const std::vector<CLEvent>& waits)
+    bool Write(cl_command_queue queue, const T* host, const std::vector<cl_event>& waits)
     {
         return this->Write(queue, 0, this->len, host, waits);
     }
-    bool Write(cl_command_queue queue, size_t offset, size_t length, const T* host, const std::vector<CLEvent>& waits)
+    bool Write(cl_command_queue queue, size_t offset, size_t length, const T* host, const std::vector<cl_event>& waits)
     {
         std::vector<cl_event> events;
         for (auto& e : waits)
@@ -240,9 +240,9 @@ public:
     {
         return this->event;
     }
-    operator CLEvent&() const
+    operator cl_event() const
     {
-        return this->event;
+        return (cl_event)this->event;
     }
 
     operator bool() const

@@ -63,7 +63,7 @@ public:
         this->Unmap({});
         this->Wait();
     }
-    void Unmap(const std::vector<CLEvent>& waits)
+    void Unmap(const std::vector<cl_event>& waits)
     {
         if (this->map)
         {
@@ -107,9 +107,9 @@ public:
     {
         return this->event;
     }
-    operator CLEvent&() const
+    operator cl_event() const
     {
-        return this->event;
+        return (cl_event)this->event;
     }
 
     T& operator[](size_t index)
