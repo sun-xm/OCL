@@ -65,7 +65,7 @@ public:
 
         this->mem = other.mem;
         this->len = other.len;
-        
+
         return *this;
     }
 
@@ -99,7 +99,7 @@ public:
         {
             mflags |= CL_MAP_WRITE;
         }
-        
+
         std::vector<cl_event> events;
         for (auto& e : waits)
         {
@@ -254,7 +254,7 @@ public:
     {
         return this->mem;
     }
-    
+
     static CLBuffer Create(cl_context context, uint32_t flags, size_t length)
     {
         cl_mem_flags mflags;

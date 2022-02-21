@@ -72,12 +72,12 @@ public:
     {
         return (cl_event)this->event;
     }
-    
+
     void Wait() const
     {
         this->event.Wait();
     }
-    
+
     void Size(const std::vector<size_t>& global, const std::vector<size_t>& local = {})
     {
         this->global = global;
@@ -88,12 +88,12 @@ public:
     {
         return this->global.empty() ? nullptr : this->global.data();
     }
-    
+
     const size_t* Local() const
     {
         return this->local.empty() ? nullptr : this->local.data();
     }
-    
+
     cl_uint Dims() const
     {
         return (cl_uint)this->global.size();

@@ -67,7 +67,7 @@ public:
     {
         return !!this->id;
     }
-    
+
     static std::vector<CLPlatform> Platforms()
     {
         std::vector<CLPlatform> platforms;

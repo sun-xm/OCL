@@ -69,7 +69,7 @@ public:
     {
         return !!this->program;
     }
-    
+
 private:
     cl_program program;
 };

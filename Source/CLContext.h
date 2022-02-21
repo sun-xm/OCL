@@ -56,7 +56,7 @@ public:
         {
             clReleaseContext(this->context);
         }
-        
+
         this->context = other.context;
         return *this;
     }
