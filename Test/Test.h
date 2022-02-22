@@ -13,6 +13,7 @@ public:
     int BufferMapCopy();
     int BufferReadWrite();
     int KernelExecute();
+    int KernelBtsort();
     int EventMapCopy();
     int EventReadWrite();
     int EventExecute();

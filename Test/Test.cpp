@@ -1,5 +1,6 @@
 #include "Test.h"
 #include <fstream>
+#include <random>
 
 using namespace std;
 
@@ -218,6 +219,74 @@ int Test::KernelExecute()
     for (size_t i = 0; i < length; i++)
     {
         if (map[i] != (int)i)
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+int Test::KernelBtsort()
+{
+    if (!*this || !this->CreateProgram())
+    {
+        return -1;
+    }
+
+    const int power = 10;
+
+    auto arr = this->context.CreateBuffer<int>(CLFlags::RW, 1 << power);
+    if (!arr)
+    {
+        return -1;
+    }
+
+    auto map = this->queue.Map(arr, CLFlags::WO);
+    if (!map)
+    {
+        return -1;
+    }
+
+    default_random_engine e;
+    uniform_int_distribution<int> d(0, arr.Length());
+
+    for (size_t i = 0; i < arr.Length(); i++)
+    {
+        map[i] = d(e);
+    }
+    map.Unmap();
+
+    auto btsort = this->program.CreateKernel("btsort");
+    if (!btsort)
+    {
+        return -1;
+    }
+    btsort.Size({ arr.Length() / 2 });
+
+    for (int i = 0; i < power; i++)
+    {
+        auto tsize = 2 << i;
+
+        for (int j = i; j >= 0; j--)
+        {
+            if (!btsort.Args(j, tsize, arr) ||
+                !this->queue.Execute(btsort))
+            {
+                return -1;
+            }
+        }
+    }
+
+    map = this->queue.Map(arr, CLFlags::RO);
+    if (!map)
+    {
+        return -1;
+    }
+
+    for (size_t i = 0; i < arr.Length() - 1; i++)
+    {
+        if (map[i] > map[i + 1])
         {
             return -1;
         }
