@@ -249,7 +249,7 @@ int Test::KernelBtsort()
     }
 
     default_random_engine e;
-    uniform_int_distribution<int> d(0, arr.Length());
+    uniform_int_distribution<int> d(0, (int)arr.Length());
 
     for (size_t i = 0; i < arr.Length(); i++)
     {

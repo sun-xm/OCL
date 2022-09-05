@@ -51,23 +51,7 @@ public:
 
         return *this;
     }
-    CLBuffer<T>& operator=(const CLBuffer& other)
-    {
-        if (other.mem && CL_SUCCESS != clRetainMemObject(other.mem))
-        {
-            throw std::runtime_error("Failed to retain buffer");
-        }
-
-        if (this->mem)
-        {
-            clReleaseMemObject(this->mem);
-        }
-
-        this->mem = other.mem;
-        this->len = other.len;
-
-        return *this;
-    }
+    CLBuffer<T>& operator=(const CLBuffer& other) = delete;
 
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags)
     {
