@@ -468,6 +468,38 @@ int Test::EventExecute()
     return 0;
 }
 
+int Test::ProgramBinary()
+{
+    if (!*this || !this->CreateProgram())
+    {
+        return -1;
+    }
+
+    vector<vector<uint8_t>> binaries;
+    if (!this->program.GetBinary(binaries))
+    {
+        return -1;
+    }
+
+    ofstream out("binary.bin", ios::binary | ios::trunc);
+    if (!this->program.Save(out))
+    {
+        return -1;
+    }
+    out.close();
+
+    vector<cl_int> status;
+    ifstream in("binary.bin", ios::binary);
+
+    this->program = this->context.LoadProgram(in, &status);
+    if (!this->program)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
 bool Test::CreateProgram()
 {
     if (this->program)

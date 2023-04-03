@@ -17,6 +17,7 @@ public:
     int EventMapCopy();
     int EventReadWrite();
     int EventExecute();
+    int ProgramBinary();
 
     operator bool() const
     {

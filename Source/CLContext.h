@@ -61,6 +61,76 @@ public:
         return *this;
     }
 
+    CLProgram LoadProgram(const std::vector<std::vector<uint8_t>>& binaries, std::vector<cl_int>* status = nullptr)
+    {
+        if (binaries.empty())
+        {
+            return CLProgram();
+        }
+
+        size_t size;
+        if (CL_SUCCESS != clGetContextInfo(this->context, CL_CONTEXT_DEVICES, 0, nullptr, &size))
+        {
+            return CLProgram();
+        }
+
+        std::vector<cl_device_id> devices(size / sizeof(cl_device_id));
+        if (devices.empty())
+        {
+            return CLProgram();
+        }
+
+        if (CL_SUCCESS != clGetContextInfo(this->context, CL_CONTEXT_DEVICES, size, &devices[0], nullptr))
+        {
+            return CLProgram();
+        }
+
+        std::vector<size_t> lengths;
+        std::vector<const uint8_t*> pointers;
+        for (auto& binary : binaries)
+        {
+            lengths.push_back(binary.size());
+            pointers.push_back(binary.data());
+        }
+
+        if (status)
+        {
+            status->resize(binaries.size());
+        }
+
+        cl_int error;
+        auto program = clCreateProgramWithBinary(this->context, (cl_uint)devices.size(), devices.data(), lengths.data(), pointers.data(), status ? &(*status)[0] : nullptr, &error);
+
+        if (CL_SUCCESS != error)
+        {
+            return CLProgram();
+        }
+
+        return CLProgram(program);
+    }
+    CLProgram LoadProgram(std::istream& stream, std::vector<cl_int>* status = nullptr)
+    {
+        std::vector<std::vector<uint8_t>> binaries;
+
+        while (true)
+        {
+            int size;
+            stream.read((char*)&size, sizeof(size));
+            if (!stream)
+            {
+                return this->LoadProgram(binaries, status);
+            }
+
+            std::vector<uint8_t> binary(size);
+            stream.read((char*)&binary[0], binary.size());
+            if (!stream)
+            {
+                return false;
+            }
+            binaries.push_back(std::move(binary));
+        }
+    }
+
     CLProgram CreateProgram(const char* source, const char* options, std::string& log)
     {
         size_t size;

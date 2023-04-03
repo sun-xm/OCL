@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CLKernel.h"
+#include <iostream>
 #include <string>
 
 class CLProgram
@@ -58,6 +59,61 @@ public:
     CLKernel CreateKernel(const std::string& name)
     {
         return CLKernel::Create(this->program, name);
+    }
+
+    bool GetBinary(std::vector<std::vector<uint8_t>>& binaries)
+    {
+        if (!this->program)
+        {
+            return false;
+        }
+
+        cl_uint devices;
+        if (CL_SUCCESS != clGetProgramInfo(this->program, CL_PROGRAM_NUM_DEVICES, sizeof(devices), &devices, nullptr))
+        {
+            return false;
+        }
+
+        std::vector<size_t> sizes(devices);
+        if (CL_SUCCESS != clGetProgramInfo(this->program, CL_PROGRAM_BINARY_SIZES, sizes.size() * sizeof(sizes[0]), &sizes[0], nullptr))
+        {
+            return false;
+        }
+
+        binaries.resize(devices);
+        std::vector<uint8_t*> pointers;
+
+        for (cl_uint i = 0; i < devices; i++)
+        {
+            auto& binary = binaries[i];
+            binary.resize(sizes[i]);
+            pointers.push_back(&binary[0]);
+        }
+
+        if (CL_SUCCESS != clGetProgramInfo(this->program, CL_PROGRAM_BINARIES, pointers.size() * sizeof(pointers[0]), &pointers[0], nullptr))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    bool Save(std::ostream& stream)
+    {
+        std::vector<std::vector<uint8_t>> binaries;
+        if (!this->GetBinary(binaries))
+        {
+            return false;
+        }
+
+        for (auto& binary : binaries)
+        {
+            int size = (int)binary.size();
+            stream.write((char*)&size, sizeof(size));
+            stream.write((char*)binary.data(), size);
+        }
+
+        return !!stream;
     }
 
     operator cl_program() const
