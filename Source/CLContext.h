@@ -105,6 +105,12 @@ public:
         {
             return CLProgram();
         }
+        ONCLEANUP(program, [=]{ clReleaseProgram(program); });
+
+        if (CL_SUCCESS != clBuildProgram(program, (cl_uint)devices.size(), devices.data(), nullptr, nullptr, nullptr))
+        {
+            return CLProgram();
+        }
 
         return CLProgram(program);
     }

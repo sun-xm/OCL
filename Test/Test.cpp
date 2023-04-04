@@ -497,6 +497,12 @@ int Test::ProgramBinary()
         return -1;
     }
 
+    auto kernel = this->program.CreateKernel("btsort");
+    if (!kernel)
+    {
+        return -1;
+    }
+
     return 0;
 }
 
