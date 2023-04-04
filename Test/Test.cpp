@@ -488,10 +488,11 @@ int Test::ProgramBinary()
     }
     out.close();
 
+    string log;
     vector<cl_int> status;
     ifstream in("binary.bin", ios::binary);
 
-    this->program = this->context.LoadProgram(in, &status);
+    this->program = this->context.LoadProgram(in, log, &status);
     if (!this->program)
     {
         return -1;
