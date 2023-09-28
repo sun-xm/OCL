@@ -160,7 +160,8 @@ public:
         }
 
         cl_event event;
-        if (CL_SUCCESS != clEnqueueNDRangeKernel(this->queue, kernel, kernel.Dims(), nullptr, kernel.Global(), kernel.Local(), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event))
+        auto err = clEnqueueNDRangeKernel(this->queue, kernel, kernel.Dims(), nullptr, kernel.Global(), kernel.Local(), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != err)
         {
             return false;
         }
@@ -185,12 +186,14 @@ public:
         if (!device)
         {
             cl_uint num;
-            if (CL_SUCCESS != clGetContextInfo(context, CL_CONTEXT_NUM_DEVICES, sizeof(num), &num, nullptr) || !num)
+            cl_int error = clGetContextInfo(context, CL_CONTEXT_NUM_DEVICES, sizeof(num), &num, nullptr);
+            if (CL_SUCCESS != error || !num)
             {
                 return CLQueue(nullptr);
             }
 
-            if (CL_SUCCESS != clGetContextInfo(context, CL_CONTEXT_DEVICES, sizeof(device), &device, nullptr))
+            error = clGetContextInfo(context, CL_CONTEXT_DEVICES, sizeof(device), &device, nullptr);
+            if (CL_SUCCESS != error)
             {
                 return CLQueue(nullptr);
             }

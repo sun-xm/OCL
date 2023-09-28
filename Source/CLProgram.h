@@ -69,13 +69,15 @@ public:
         }
 
         cl_uint devices;
-        if (CL_SUCCESS != clGetProgramInfo(this->program, CL_PROGRAM_NUM_DEVICES, sizeof(devices), &devices, nullptr))
+        cl_int error = clGetProgramInfo(this->program, CL_PROGRAM_NUM_DEVICES, sizeof(devices), &devices, nullptr);
+        if (CL_SUCCESS != error)
         {
             return false;
         }
 
         std::vector<size_t> sizes(devices);
-        if (CL_SUCCESS != clGetProgramInfo(this->program, CL_PROGRAM_BINARY_SIZES, sizes.size() * sizeof(sizes[0]), &sizes[0], nullptr))
+        error = clGetProgramInfo(this->program, CL_PROGRAM_BINARY_SIZES, sizes.size() * sizeof(sizes[0]), &sizes[0], nullptr);
+        if (CL_SUCCESS != error)
         {
             return false;
         }
@@ -90,7 +92,8 @@ public:
             pointers.push_back(&binary[0]);
         }
 
-        if (CL_SUCCESS != clGetProgramInfo(this->program, CL_PROGRAM_BINARIES, pointers.size() * sizeof(pointers[0]), &pointers[0], nullptr))
+        error = clGetProgramInfo(this->program, CL_PROGRAM_BINARIES, pointers.size() * sizeof(pointers[0]), &pointers[0], nullptr);
+        if (CL_SUCCESS != error)
         {
             return false;
         }

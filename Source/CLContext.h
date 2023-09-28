@@ -69,7 +69,8 @@ public:
         }
 
         size_t size;
-        if (CL_SUCCESS != clGetContextInfo(this->context, CL_CONTEXT_DEVICES, 0, nullptr, &size))
+        cl_int error = clGetContextInfo(this->context, CL_CONTEXT_DEVICES, 0, nullptr, &size);
+        if (CL_SUCCESS != error)
         {
             log = "Failed to get context devices number";
             return CLProgram();
@@ -82,7 +83,8 @@ public:
             return CLProgram();
         }
 
-        if (CL_SUCCESS != clGetContextInfo(this->context, CL_CONTEXT_DEVICES, size, &devices[0], nullptr))
+        error = clGetContextInfo(this->context, CL_CONTEXT_DEVICES, size, &devices[0], nullptr);
+        if (CL_SUCCESS != error)
         {
             log = "Failed to get context devices";
             return CLProgram();
@@ -101,7 +103,6 @@ public:
             status->resize(binaries.size());
         }
 
-        cl_int error;
         auto program = clCreateProgramWithBinary(this->context, (cl_uint)devices.size(), devices.data(), lengths.data(), pointers.data(), status ? &(*status)[0] : nullptr, &error);
 
         if (CL_SUCCESS != error)
@@ -111,14 +112,16 @@ public:
         }
         ONCLEANUP(program, [=]{ clReleaseProgram(program); });
 
-        if (CL_SUCCESS != clBuildProgram(program, (cl_uint)devices.size(), devices.data(), nullptr, nullptr, nullptr))
+        error = clBuildProgram(program, (cl_uint)devices.size(), devices.data(), nullptr, nullptr, nullptr);
+        if (CL_SUCCESS != error)
         {
             log = "Failed to build program\n";
 
             for (auto device : devices)
             {
                 cl_build_status status;
-                if (CL_SUCCESS != clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_STATUS, sizeof(status), &status, nullptr))
+                error = clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_STATUS, sizeof(status), &status, nullptr);
+                if (CL_SUCCESS != error)
                 {
                     log += "Failed to get program build status";
                     break;
@@ -126,7 +129,8 @@ public:
 
                 if (CL_BUILD_ERROR == status)
                 {
-                    if (CL_SUCCESS != clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, nullptr, &size))
+                    error = clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, nullptr, &size);
+                    if (CL_SUCCESS != error)
                     {
                         log += "Failed to get program build log length";
                         break;
@@ -135,7 +139,8 @@ public:
                     std::string err;
                     err.resize(size);
 
-                    if (CL_SUCCESS != clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, size, &err[0], nullptr))
+                    error = clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, size, &err[0], nullptr);
+                    if (CL_SUCCESS != error)
                     {
                         log += "Failed to get program build log";
                         break;
@@ -178,7 +183,8 @@ public:
     CLProgram CreateProgram(const char* source, const char* options, std::string& log)
     {
         size_t size;
-        if (CL_SUCCESS != clGetContextInfo(this->context, CL_CONTEXT_DEVICES, 0, nullptr, &size))
+        cl_int error = clGetContextInfo(this->context, CL_CONTEXT_DEVICES, 0, nullptr, &size);
+        if (CL_SUCCESS != error)
         {
             log = "Failed to get context devices number";
             return CLProgram();
@@ -191,15 +197,14 @@ public:
             return CLProgram();
         }
 
-        if (CL_SUCCESS != clGetContextInfo(this->context, CL_CONTEXT_DEVICES, size, &devices[0], nullptr))
+        error = clGetContextInfo(this->context, CL_CONTEXT_DEVICES, size, &devices[0], nullptr);
+        if (CL_SUCCESS != error)
         {
             log = "Failed to get context devices";
             return CLProgram();
         }
 
         auto length = strlen(source);
-        cl_int error;
-
         auto program = clCreateProgramWithSource(this->context, 1, &source, &length, &error);
         if (CL_SUCCESS != error)
         {
@@ -208,14 +213,16 @@ public:
         }
         ONCLEANUP(program, [=]{ clReleaseProgram(program); });
 
-        if (CL_SUCCESS != clBuildProgram(program, (cl_uint)devices.size(), devices.data(), options, nullptr, nullptr))
+        error = clBuildProgram(program, (cl_uint)devices.size(), devices.data(), options, nullptr, nullptr);
+        if (CL_SUCCESS != error)
         {
             log = "Failed to build program\n";
 
             for (auto device : devices)
             {
                 cl_build_status status;
-                if (CL_SUCCESS != clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_STATUS, sizeof(status), &status, nullptr))
+                error = clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_STATUS, sizeof(status), &status, nullptr);
+                if (CL_SUCCESS != error)
                 {
                     log += "Failed to get program build status";
                     break;
@@ -223,7 +230,8 @@ public:
 
                 if (CL_BUILD_ERROR == status)
                 {
-                    if (CL_SUCCESS != clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, nullptr, &size))
+                    error = clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, nullptr, &size);
+                    if (CL_SUCCESS != error)
                     {
                         log += "Failed to get program build log length";
                         break;
@@ -232,7 +240,8 @@ public:
                     std::string err;
                     err.resize(size);
 
-                    if (CL_SUCCESS != clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, size, &err[0], nullptr))
+                    error = clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, size, &err[0], nullptr);
+                    if (CL_SUCCESS != error)
                     {
                         log += "Failed to get program build log";
                         break;
@@ -272,13 +281,15 @@ public:
         }
 
         cl_uint num;
-        if (CL_SUCCESS != clGetContextInfo(this->context, CL_CONTEXT_NUM_DEVICES, sizeof(num), &num, nullptr) || !num)
+        cl_int error = clGetContextInfo(this->context, CL_CONTEXT_NUM_DEVICES, sizeof(num), &num, nullptr);
+        if (CL_SUCCESS != error || !num)
         {
             return CLDevice(nullptr);
         }
 
         std::vector<cl_device_id> ids(num);
-        if (CL_SUCCESS != clGetContextInfo(this->context, CL_CONTEXT_DEVICES, ids.size() * sizeof(ids[0]), &ids[0], nullptr))
+        error = clGetContextInfo(this->context, CL_CONTEXT_DEVICES, ids.size() * sizeof(ids[0]), &ids[0], nullptr);
+        if (CL_SUCCESS != error)
         {
             return CLDevice(nullptr);
         }

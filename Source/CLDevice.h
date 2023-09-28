@@ -69,14 +69,15 @@ private:
         info.clear();
 
         size_t length;
-        if (CL_SUCCESS != clGetDeviceInfo(this->id, param, 0, nullptr, &length))
+        cl_int error = clGetDeviceInfo(this->id, param, 0, nullptr, &length);
+        if (CL_SUCCESS != error)
         {
             return;
         }
 
         info.resize(length);
-
-        if (CL_SUCCESS == clGetDeviceInfo(this->id, param, length, &info[0], nullptr))
+        error = clGetDeviceInfo(this->id, param, length, &info[0], nullptr);
+        if (CL_SUCCESS == error)
         {
             info.resize(length - 1);
         }
@@ -88,7 +89,9 @@ private:
     void Info(cl_device_info param, bool& info) const
     {
         cl_bool b;
-        if (CL_SUCCESS != clGetDeviceInfo(this->id, param, sizeof(b), &b, nullptr))
+
+        cl_int error = clGetDeviceInfo(this->id, param, sizeof(b), &b, nullptr);
+        if (CL_SUCCESS != error)
         {
             throw std::runtime_error("Failed to get device info");
         }

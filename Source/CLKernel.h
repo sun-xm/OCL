@@ -127,20 +127,23 @@ private:
     bool SetArgs(cl_uint index, const CLBuffer<T>& buffer)
     {
         auto mem = (cl_mem)buffer;
-        return CL_SUCCESS == clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
+        auto err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
+        return CL_SUCCESS == err;
     }
 
     template<typename T0>
     bool SetArgs(cl_uint index, const T0& arg0)
     {
-        return CL_SUCCESS == clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
+        auto err = clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
+        return CL_SUCCESS == err;
     }
 
     template<typename T, typename... Tx>
     bool SetArgs(cl_uint index, const CLBuffer<T>& buffer, const Tx&... args)
     {
         auto mem = (cl_mem)buffer;
-        if (CL_SUCCESS != clSetKernelArg(this->kernel, index, sizeof(mem), &mem))
+        auto err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
+        if (CL_SUCCESS != err)
         {
             return false;
         }
@@ -151,7 +154,8 @@ private:
     template<typename T0, typename... Tx>
     bool SetArgs(cl_uint index, const T0& arg0, const Tx&... args)
     {
-        if (CL_SUCCESS != clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0))
+        auto err = clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
+        if (CL_SUCCESS != err)
         {
             return false;
         }

@@ -35,7 +35,8 @@ public:
         std::vector<CLDevice> devices;
 
         cl_uint num;
-        if (CL_SUCCESS != clGetDeviceIDs(this->id, CL_DEVICE_TYPE_ALL, 0, nullptr, &num))
+        cl_int error = clGetDeviceIDs(this->id, CL_DEVICE_TYPE_ALL, 0, nullptr, &num);
+        if (CL_SUCCESS != error)
         {
             return devices;
         }
@@ -43,7 +44,8 @@ public:
         if (num)
         {
             std::vector<cl_device_id> ids(num);
-            if (CL_SUCCESS != clGetDeviceIDs(this->id, CL_DEVICE_TYPE_ALL, num, &ids[0], nullptr))
+            error = clGetDeviceIDs(this->id, CL_DEVICE_TYPE_ALL, num, &ids[0], nullptr);
+            if (CL_SUCCESS != error)
             {
                 return devices;
             }
@@ -73,7 +75,8 @@ public:
         std::vector<CLPlatform> platforms;
 
         cl_uint num;
-        if (CL_SUCCESS != clGetPlatformIDs(0, nullptr, &num))
+        cl_int error = clGetPlatformIDs(0, nullptr, &num);
+        if (CL_SUCCESS != error)
         {
             return platforms;
         }
@@ -81,7 +84,8 @@ public:
         if (num)
         {
             std::vector<cl_platform_id> ids(num);
-            if (CL_SUCCESS != clGetPlatformIDs(num, &ids[0], nullptr))
+            error = clGetPlatformIDs(num, &ids[0], nullptr);
+            if (CL_SUCCESS != error)
             {
                 return platforms;
             }
@@ -100,7 +104,8 @@ private:
     std::string Info(cl_platform_info param) const
     {
         size_t length;
-        if (CL_SUCCESS != clGetPlatformInfo(this->id, param, 0, nullptr, &length))
+        cl_int error = clGetPlatformInfo(this->id, param, 0, nullptr, &length);
+        if (CL_SUCCESS != error)
         {
             return "";
         }
@@ -108,7 +113,8 @@ private:
         std::string info;
         info.resize(length);
 
-        if (CL_SUCCESS == clGetPlatformInfo(this->id, param, length, &info[0], nullptr))
+        error = clGetPlatformInfo(this->id, param, length, &info[0], nullptr);
+        if (CL_SUCCESS == error)
         {
             info.resize(length - 1);
         }
