@@ -26,7 +26,7 @@ public:
     {
         *this = other;
     }
-   ~CLEvent()
+    virtual ~CLEvent()
     {
        if (this->event)
        {
@@ -76,6 +76,6 @@ public:
         return !!this->event;
     }
 
-private:
+protected:
     cl_event event;
 };

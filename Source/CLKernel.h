@@ -27,7 +27,7 @@ public:
     {
         *this = other;
     }
-   ~CLKernel()
+    virtual ~CLKernel()
     {
         if (this->kernel)
         {
@@ -122,7 +122,7 @@ public:
         return CLKernel(kernel);
     }
 
-private:
+protected:
     template<typename T>
     bool SetArgs(cl_uint index, const CLBuffer<T>& buffer)
     {
@@ -163,7 +163,7 @@ private:
         return this->SetArgs(index + 1, args...);
     }
 
-private:
+protected:
     cl_kernel kernel;
     std::vector<size_t> global;
     std::vector<size_t> local;

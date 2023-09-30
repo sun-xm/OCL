@@ -63,7 +63,7 @@ public:
         return !!this->id;
     }
 
-private:
+protected:
     void Info(cl_device_info param, std::string& info) const
     {
         info.clear();
@@ -99,6 +99,6 @@ private:
         info = b ? true : false;
     }
 
-private:
+protected:
     cl_device_id id;
 };

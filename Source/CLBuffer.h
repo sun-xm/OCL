@@ -30,7 +30,7 @@ public:
     {
         *this = other;
     }
-   ~CLBuffer()
+    virtual ~CLBuffer()
     {
         if (this->mem)
         {
@@ -38,7 +38,7 @@ public:
         }
     }
 
-    CLBuffer<T>& operator=(CLBuffer&& other)
+    CLBuffer& operator=(CLBuffer&& other)
     {
         cl_mem mem = this->mem;
         size_t len = this->len;
@@ -51,7 +51,7 @@ public:
 
         return *this;
     }
-    CLBuffer<T>& operator=(const CLBuffer& other) = delete;
+    CLBuffer& operator=(const CLBuffer& other) = delete;
 
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags)
     {
@@ -108,20 +108,20 @@ public:
         return CLMemMap<T>(this->mem, queue, event, map);
     }
 
-    bool Copy(cl_command_queue queue, const CLBuffer<T>& source)
+    bool Copy(cl_command_queue queue, const CLBuffer& source)
     {
         return this->Copy(queue, source, 0, 0, this->len < source.len ? this->len : source.len);
     }
-    bool Copy(cl_command_queue queue, const CLBuffer<T>& source, size_t srcoff, size_t dstoff, size_t length)
+    bool Copy(cl_command_queue queue, const CLBuffer& source, size_t srcoff, size_t dstoff, size_t length)
     {
         ONCLEANUP(wait, [this]{ this->Wait(); });
         return this->Copy(queue, source, srcoff, dstoff, length, {});
     }
-    bool Copy(cl_command_queue queue, const CLBuffer<T>& source, const std::vector<cl_event>& waits)
+    bool Copy(cl_command_queue queue, const CLBuffer& source, const std::vector<cl_event>& waits)
     {
         return this->Copy(queue, source, 0, 0, this->len < source.len ? this->len : source.len, waits);
     }
-    bool Copy(cl_command_queue queue, const CLBuffer<T>& source, size_t srcoff, size_t dstoff, size_t length, const std::vector<cl_event>& waits)
+    bool Copy(cl_command_queue queue, const CLBuffer& source, size_t srcoff, size_t dstoff, size_t length, const std::vector<cl_event>& waits)
     {
         std::vector<cl_event> events;
         for (auto& e : waits)
@@ -274,9 +274,7 @@ public:
         return CLBuffer(buffer, length);
     }
 
-private:
-
-private:
+protected:
     cl_mem mem;
     size_t len;
     mutable CLEvent event;

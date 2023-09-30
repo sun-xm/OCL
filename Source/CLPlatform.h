@@ -100,7 +100,7 @@ public:
         return platforms;
     }
 
-private:
+protected:
     std::string Info(cl_platform_info param) const
     {
         size_t length;
@@ -126,6 +126,6 @@ private:
         return info;
     }
 
-private:
+protected:
     cl_platform_id id;
 };

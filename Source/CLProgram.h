@@ -25,7 +25,7 @@ public:
     {
         *this = other;
     }
-   ~CLProgram()
+    virtual ~CLProgram()
     {
         if (this->program)
         {
@@ -129,6 +129,6 @@ public:
         return !!this->program;
     }
 
-private:
+protected:
     cl_program program;
 };

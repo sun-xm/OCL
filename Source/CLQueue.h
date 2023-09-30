@@ -23,7 +23,7 @@ public:
     {
         *this = other;
     }
-   ~CLQueue()
+    virtual ~CLQueue()
     {
         if (this->queue)
         {
@@ -209,6 +209,6 @@ public:
         return CLQueue(queue);
     }
 
-private:
+protected:
     cl_command_queue queue;
 };

@@ -32,7 +32,7 @@ public:
         *this = std::move(other);
     }
     CLMemMap(const CLMemMap&) = delete;
-   ~CLMemMap()
+    virtual ~CLMemMap()
     {
         this->Unmap({});
     }
@@ -126,7 +126,7 @@ public:
         return !!this->mem;
     }
 
-private:
+protected:
     void*  map;
     cl_mem mem;
     cl_command_queue queue;

@@ -30,7 +30,7 @@ public:
     {
         *this = other;
     }
-   ~CLContext()
+    virtual ~CLContext()
     {
         if (this->context)
         {
@@ -330,6 +330,6 @@ public:
         return Create(devices[0]);
     }
 
-private:
+protected:
     cl_context context;
 };
