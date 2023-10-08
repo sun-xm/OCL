@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CLBuffer.h"
+#include "CLLocal.h"
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -123,18 +124,16 @@ public:
     }
 
 protected:
+    bool SetArgs(cl_uint index, const CLLocal& local)
+    {
+        auto err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
+    }
+
     template<typename T>
     bool SetArgs(cl_uint index, const CLBuffer<T>& buffer)
     {
         auto mem = (cl_mem)buffer;
         auto err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
-        return CL_SUCCESS == err;
-    }
-
-    template<typename T0>
-    bool SetArgs(cl_uint index, const T0& arg0)
-    {
-        auto err = clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
         return CL_SUCCESS == err;
     }
 
@@ -149,6 +148,13 @@ protected:
         }
 
         return this->SetArgs(index + 1, args...);
+    }
+
+    template<typename T0>
+    bool SetArgs(cl_uint index, const T0& arg0)
+    {
+        auto err = clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
+        return CL_SUCCESS == err;
     }
 
     template<typename T0, typename... Tx>
