@@ -127,6 +127,7 @@ protected:
     bool SetArgs(cl_uint index, const CLLocal& local)
     {
         auto err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
+        return CL_SUCCESS == err;
     }
 
     template<typename T>
