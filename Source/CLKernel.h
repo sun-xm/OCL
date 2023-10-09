@@ -130,6 +130,18 @@ protected:
         return CL_SUCCESS == err;
     }
 
+    template<typename... Tx>
+    bool SetArgs(cl_uint index, const CLLocal& local, const Tx&... args)
+    {
+        auto err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
+        if (CL_SUCCESS != err)
+        {
+            return false;
+        }
+
+        return this->SetArgs(index + 1, args...);
+    }
+
     template<typename T>
     bool SetArgs(cl_uint index, const CLBuffer<T>& buffer)
     {
