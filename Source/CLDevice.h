@@ -53,6 +53,19 @@ public:
         return support;
     }
 
+    size_t MaxWorkGroupSize() const
+    {
+        size_t size;
+        this->Info(CL_DEVICE_MAX_WORK_GROUP_SIZE, size);
+        return size;
+    }
+    size_t LocalMemSize() const
+    {
+        cl_ulong size;
+        this->Info(CL_DEVICE_LOCAL_MEM_SIZE, size);
+        return (size_t)size;
+    }
+
     operator cl_device_id() const
     {
         return this->id;
@@ -97,6 +110,15 @@ protected:
         }
 
         info = b ? true : false;
+    }
+    template<typename T>
+    void Info(cl_device_info param, T& info) const
+    {
+        cl_int error = clGetDeviceInfo(this->id, param, sizeof(info), &info, nullptr);
+        if (CL_SUCCESS != error)
+        {
+            throw std::runtime_error("Failed to get device info");
+        }
     }
 
 protected:
