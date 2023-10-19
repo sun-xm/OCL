@@ -83,12 +83,12 @@ int Test::BufferMapCopy()
     }
 
     auto map = this->queue.Map(src, CLFlags::WO);
-    if (!map)
+    if (!map || map.Length() != src.Length())
     {
         return -1;
     }
 
-    for (size_t i = 0; i < src.Length(); i++)
+    for (size_t i = 0; i < map.Length(); i++)
     {
         map[i] = (int)i;
     }
@@ -311,7 +311,7 @@ int Test::EventMapCopy()
     }
 
     auto map = this->queue.Map(src, CLFlags::WO, {});
-    if (!map)
+    if (!map || map.Length() != src.Length())
     {
         return -1;
     }
@@ -320,7 +320,7 @@ int Test::EventMapCopy()
     // Mapped write-only memory is cleared with zeros through mapping. Not understandable.
     map.Wait();
 
-    for (size_t i = 0; i < src.Length(); i++)
+    for (size_t i = 0; i < map.Length(); i++)
     {
         map[i] = (int)i;
     }
@@ -342,9 +342,15 @@ int Test::EventMapCopy()
     {
         return -1;
     }
+
+    if (map.Length () != dst.Length())
+    {
+        return -1;
+    }
+
     map.Wait();
 
-    for (size_t i = 0; i < length; i++)
+    for (size_t i = 0; i < map.Length(); i++)
     {
         auto m = map[i];
         if (map[i] != (int)i)

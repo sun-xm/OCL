@@ -7,10 +7,10 @@ template<typename T>
 class CLMemMap
 {
 public:
-    CLMemMap() : map(nullptr), mem(nullptr), queue(nullptr)
+    CLMemMap() : map(nullptr), mem(nullptr), queue(nullptr), len(0)
     {
     }
-    CLMemMap(cl_mem mem, cl_command_queue queue, cl_event event, void* map) : CLMemMap()
+    CLMemMap(cl_mem mem, cl_command_queue queue, cl_event event, void* map, size_t len) : CLMemMap()
     {
         if (mem && CL_SUCCESS == clRetainMemObject(mem))
         {
@@ -18,6 +18,7 @@ public:
             {
                 this->map = map;
                 this->mem = mem;
+                this->len = len;
                 this->queue = queue;
                 this->event = CLEvent(event);
             }
@@ -41,16 +42,19 @@ public:
     {
         auto map = this->map;
         auto mem = this->mem;
+        auto len = this->len;
         auto que = this->queue;
         auto evt = this->event;
 
         this->map = other.map;
         this->mem = other.mem;
+        this->len = other.len;
         this->queue = other.queue;
         this->event = other.event;
 
         other.map = map;
         other.mem = mem;
+        other.len = len;
         other.queue = que;
         other.event = evt;
 
@@ -80,6 +84,7 @@ public:
             auto err = clEnqueueUnmapMemObject(this->queue, this->mem, this->map, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
             assert(CL_SUCCESS == err);
             this->map = nullptr;
+            this->len = 0;
 
             this->event = CLEvent(event);
             clReleaseEvent(event);
@@ -112,6 +117,11 @@ public:
         return (cl_event)this->event;
     }
 
+    size_t Length() const
+    {
+        return this->len;
+    }
+
     T& operator[](size_t index)
     {
         return ((T*)this->map)[index];
@@ -128,6 +138,7 @@ public:
 
 protected:
     void*  map;
+    size_t len;
     cl_mem mem;
     cl_command_queue queue;
 
