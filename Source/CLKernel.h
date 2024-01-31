@@ -123,6 +123,11 @@ public:
         return (cl_uint)this->global.size();
     }
 
+    cl_int Error() const
+    {
+        return this->error;
+    }
+
     template<typename T0, typename... Tx>
     bool Args(const T0& arg0, const Tx&... args)
     {
