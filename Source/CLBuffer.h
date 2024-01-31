@@ -26,10 +26,7 @@ public:
     {
         *this = std::move(other);
     }
-    CLBuffer(const CLBuffer& other) : CLBuffer()
-    {
-        *this = other;
-    }
+    CLBuffer(const CLBuffer& other) = delete;
     virtual ~CLBuffer()
     {
         if (this->mem)

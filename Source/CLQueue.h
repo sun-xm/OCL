@@ -112,7 +112,7 @@ public:
         return buffer.Read(this->queue, host, waits);
     }
     template<typename T>
-    bool Read(const CLBuffer<T>& buffer, size_t offset, size_t length, T* host, const std::vector<CLEvent&>& waits)
+    bool Read(const CLBuffer<T>& buffer, size_t offset, size_t length, T* host, const std::vector<cl_event&>& waits)
     {
         return buffer.Read(this->queue, offset, length, host, waits);
     }
