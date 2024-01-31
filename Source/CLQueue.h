@@ -150,25 +150,7 @@ public:
     }
     bool Execute(const CLKernel& kernel, const std::vector<cl_event>& waits)
     {
-        std::vector<cl_event> events;
-        for (auto& e : waits)
-        {
-            if (e)
-            {
-                events.push_back(e);
-            }
-        }
-
-        cl_event event;
-        auto err = clEnqueueNDRangeKernel(this->queue, kernel, kernel.Dims(), nullptr, kernel.Global(), kernel.Local(), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
-        if (CL_SUCCESS != err)
-        {
-            return false;
-        }
-
-        kernel.Event() = CLEvent(event);
-        clReleaseEvent(event);
-        return true;
+        return kernel.Execute(this->queue, waits);
     }
 
     void Finish()

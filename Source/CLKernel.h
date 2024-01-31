@@ -36,6 +36,29 @@ public:
         }
     }
 
+    bool Execute(cl_command_queue queue, const std::vector<cl_event>& waits) const
+    {
+        std::vector<cl_event> events;
+        for (auto e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        cl_event event;
+        this->error = clEnqueueNDRangeKernel(queue, this->kernel, this->Dims(), nullptr, this->Global(), this->Local(), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->error)
+        {
+            return false;
+        }
+
+        this->event = CLEvent(event);
+        clReleaseEvent(event);
+        return true;
+    }
+
     CLKernel& operator=(CLKernel&& other)
     {
         cl_kernel kernel = this->kernel;
@@ -65,7 +88,7 @@ public:
         return *this;
     }
 
-    CLEvent& Event() const
+    const CLEvent& Event() const
     {
         return this->event;
     }
@@ -187,5 +210,6 @@ protected:
     std::vector<size_t> global;
     std::vector<size_t> local;
 
+    mutable cl_int  error;
     mutable CLEvent event;
 };

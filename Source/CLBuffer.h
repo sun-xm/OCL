@@ -90,11 +90,10 @@ public:
             }
         }
 
-        cl_int error;
         cl_event event;
-        auto map = clEnqueueMapBuffer(queue, this->mem, CL_FALSE, mflags, offset * sizeof(T), length * sizeof(T), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &error);
+        auto map = clEnqueueMapBuffer(queue, this->mem, CL_FALSE, mflags, offset * sizeof(T), length * sizeof(T), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &this->error);
 
-        if (CL_SUCCESS != error)
+        if (CL_SUCCESS != this->error)
         {
             return CLMemMap<T>();
         }
@@ -130,8 +129,8 @@ public:
         }
 
         cl_event event;
-        cl_int error = clEnqueueCopyBuffer(queue, source, this->mem, srcoff * sizeof(T), dstoff * sizeof(T), length * sizeof(T), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
-        if (CL_SUCCESS != error)
+        this->error = clEnqueueCopyBuffer(queue, source, this->mem, srcoff * sizeof(T), dstoff * sizeof(T), length * sizeof(T), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->error)
         {
             return false;
         }
@@ -165,8 +164,8 @@ public:
         }
 
         cl_event event;
-        cl_int error = clEnqueueReadBuffer(queue, this->mem, CL_FALSE, offset * sizeof(T), length * sizeof(T), host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
-        if (CL_SUCCESS != error)
+        this->error = clEnqueueReadBuffer(queue, this->mem, CL_FALSE, offset * sizeof(T), length * sizeof(T), host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->error)
         {
             return false;
         }
@@ -200,8 +199,8 @@ public:
         }
 
         cl_event event;
-        cl_int error = clEnqueueWriteBuffer(queue, this->mem, CL_FALSE, offset * sizeof(T), length * sizeof(T), host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
-        if (CL_SUCCESS != error)
+        this->error = clEnqueueWriteBuffer(queue, this->mem, CL_FALSE, offset * sizeof(T), length * sizeof(T), host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->error)
         {
             return false;
         }
@@ -218,6 +217,11 @@ public:
     size_t Length() const
     {
         return this->len;
+    }
+
+    cl_int Error() const
+    {
+        return this->error;
     }
 
     CLEvent Event() const
@@ -274,5 +278,6 @@ public:
 protected:
     cl_mem mem;
     size_t len;
+    mutable cl_int  error;
     mutable CLEvent event;
 };
