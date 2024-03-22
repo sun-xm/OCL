@@ -11,16 +11,17 @@ template<typename T>
 class CLBuffer
 {
 public:
-    CLBuffer() : mem(nullptr), len(0), error(0)
+    CLBuffer() : mem(nullptr), len(0), err(0)
     {
     }
-    CLBuffer(cl_mem mem, size_t length) : CLBuffer()
+    CLBuffer(cl_mem mem, size_t length, cl_int error) : CLBuffer()
     {
         if (mem && length && CL_SUCCESS == clRetainMemObject(mem))
         {
             this->mem = mem;
             this->len = length;
         }
+        this->err = error;
     }
     CLBuffer(CLBuffer&& other) : CLBuffer()
     {
@@ -37,14 +38,17 @@ public:
 
     CLBuffer& operator=(CLBuffer&& other)
     {
-        cl_mem mem = this->mem;
-        size_t len = this->len;
+        auto mem = this->mem;
+        auto len = this->len;
+        auto err = this->err;
 
         this->mem = other.mem;
         this->len = other.len;
+        this->err = other.err;
 
         other.mem = mem;
         other.len = len;
+        other.err = err;
 
         return *this;
     }
@@ -91,14 +95,14 @@ public:
         }
 
         cl_event event;
-        auto map = clEnqueueMapBuffer(queue, this->mem, CL_FALSE, mflags, offset * sizeof(T), length * sizeof(T), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &this->error);
+        auto map = clEnqueueMapBuffer(queue, this->mem, CL_FALSE, mflags, offset * sizeof(T), length * sizeof(T), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &this->err);
 
-        if (CL_SUCCESS != this->error)
+        if (CL_SUCCESS != this->err)
         {
             return CLMemMap<T>();
         }
 
-        this->event = CLEvent(event);
+        this->evt = CLEvent(event);
         clReleaseEvent(event);
 
         return CLMemMap<T>(this->mem, queue, event, map, length);
@@ -129,13 +133,13 @@ public:
         }
 
         cl_event event;
-        this->error = clEnqueueCopyBuffer(queue, source, this->mem, srcoff * sizeof(T), dstoff * sizeof(T), length * sizeof(T), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
-        if (CL_SUCCESS != this->error)
+        this->err = clEnqueueCopyBuffer(queue, source, this->mem, srcoff * sizeof(T), dstoff * sizeof(T), length * sizeof(T), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
         {
             return false;
         }
 
-        this->event = CLEvent(event);
+        this->evt = CLEvent(event);
         return true;
     }
 
@@ -164,13 +168,13 @@ public:
         }
 
         cl_event event;
-        this->error = clEnqueueReadBuffer(queue, this->mem, CL_FALSE, offset * sizeof(T), length * sizeof(T), host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
-        if (CL_SUCCESS != this->error)
+        this->err = clEnqueueReadBuffer(queue, this->mem, CL_FALSE, offset * sizeof(T), length * sizeof(T), host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
         {
             return false;
         }
 
-        this->event = CLEvent(event);
+        this->evt = CLEvent(event);
         return true;
     }
 
@@ -199,19 +203,19 @@ public:
         }
 
         cl_event event;
-        this->error = clEnqueueWriteBuffer(queue, this->mem, CL_FALSE, offset * sizeof(T), length * sizeof(T), host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
-        if (CL_SUCCESS != this->error)
+        this->err = clEnqueueWriteBuffer(queue, this->mem, CL_FALSE, offset * sizeof(T), length * sizeof(T), host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
         {
             return false;
         }
 
-        this->event = CLEvent(event);
+        this->evt = CLEvent(event);
         return true;
     }
 
     void Wait() const
     {
-        this->event.Wait();
+        this->evt.Wait();
     }
 
     size_t Length() const
@@ -221,16 +225,16 @@ public:
 
     cl_int Error() const
     {
-        return this->error;
+        return this->err;
     }
 
     CLEvent Event() const
     {
-        return this->event;
+        return this->evt;
     }
     operator cl_event() const
     {
-        return (cl_event)this->event;
+        return (cl_event)this->evt;
     }
 
     operator bool() const
@@ -267,17 +271,18 @@ public:
             }
 
             default:
-                throw std::runtime_error("Invalid memory creation flag");
+                throw std::runtime_error("Unsupported memory creation flag");
         }
 
-        auto buffer = clCreateBuffer(context, mflags, length * sizeof(T), nullptr, nullptr);
+        cl_int error;
+        auto buffer = clCreateBuffer(context, mflags, length * sizeof(T), nullptr, &error);
         ONCLEANUP(buffer, [=]{ if (buffer) clReleaseMemObject(buffer); });
-        return CLBuffer(buffer, length);
+        return CLBuffer(buffer, length, error);
     }
 
 protected:
     cl_mem mem;
     size_t len;
-    mutable cl_int  error;
-    mutable CLEvent event;
+    mutable cl_int  err;
+    mutable CLEvent evt;
 };

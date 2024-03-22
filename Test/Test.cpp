@@ -164,6 +164,49 @@ int Test::BufferReadWrite()
     return 0;
 }
 
+int Test::ImageCreation()
+{
+    if (!*this)
+    {
+        return -1;
+    }
+
+    auto img = this->context.CreateImage(CLFlags::RO,
+                                         CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8),
+                                         CLImgDsc(100));
+    if (!img || img.Error())
+    {
+        return -1;
+    }
+
+    img = this->context.CreateImage(CLFlags::WO,
+                                    CLImgFmt(CL_R, CL_UNSIGNED_INT16),
+                                    CLImgDsc(100, 100));
+    if (!img || img.Error())
+    {
+        return -1;
+    }
+
+    img = this->context.CreateImage(CLFlags::RW,
+                                    CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8),
+                                    CLImgDsc(100, 100, 100));
+    if (!img || img.Error())
+    {
+        return -1;
+    }
+
+    auto buf = this->context.CreateBuffer<uint32_t>(CLFlags::RW, 100);
+    img = this->context.CreateImage(CLFlags::RW,
+                                    CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8),
+                                    CLImgDsc(100, 0, 0, buf));
+    if (!img || img.Error())
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
 int Test::KernelExecute()
 {
     if (!*this || !this->CreateProgram())

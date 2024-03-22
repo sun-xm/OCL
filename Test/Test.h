@@ -12,6 +12,7 @@ public:
     int ContextDevice();
     int BufferMapCopy();
     int BufferReadWrite();
+    int ImageCreation();
     int KernelExecute();
     int KernelBtsort();
     int EventMapCopy();
