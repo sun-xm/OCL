@@ -11,7 +11,7 @@ template<typename T>
 class CLBuffer
 {
 public:
-    CLBuffer() : mem(nullptr), len(0)
+    CLBuffer() : mem(nullptr), len(0), error(0)
     {
     }
     CLBuffer(cl_mem mem, size_t length) : CLBuffer()

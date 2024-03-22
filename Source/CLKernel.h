@@ -10,7 +10,7 @@
 class CLKernel
 {
 public:
-    CLKernel() : kernel(nullptr)
+    CLKernel() : kernel(nullptr), error(0)
     {
     }
     CLKernel(cl_kernel kernel) : CLKernel()
