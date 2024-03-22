@@ -207,6 +207,55 @@ int Test::ImageCreation()
     return 0;
 }
 
+int Test::ImageReadWrite()
+{
+    if (!*this || !this->CreateProgram())
+    {
+        return -1;
+    }
+
+    auto img = this->context.CreateImage(CLFlags::RW,
+                                         CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8),
+                                         CLImgDsc(100, 100));
+    if (!img || img.Error())
+    {
+        return -1;
+    }
+
+    vector<uint32_t> pix(100 * 100, 0xFFFEFDFC);
+    img.Write(this->queue, { 0, 0 }, { 100, 100 }, 0, 0, pix.data(), {});
+    if (img.Error())
+    {
+        return -1;
+    }
+
+    // TODO: image need to be touched by kernels before can be read out correctly. Why?
+    auto check = this->program.CreateKernel("touchImage");
+    check.Args(img);
+    check.Size({ 1, 1 });
+    this->queue.Execute(check, { img });
+
+    pix.clear();
+    pix.resize(100 * 100, 0);
+
+    img.Read(this->queue, { 0, 0 }, { 100, 100 }, 0, 0, &pix[0], { img });
+    if (img.Error())
+    {
+        return -1;
+    }
+    img.Wait();
+
+    for (size_t i = 0; i < pix.size(); i++)
+    {
+        if (0xFFFEFDFC != pix[i])
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 int Test::KernelExecute()
 {
     if (!*this || !this->CreateProgram())

@@ -99,7 +99,7 @@ public:
 
     void Wait() const
     {
-        this->evt.Wait();
+        this->err = this->evt.Wait();
     }
 
     void Size(const std::vector<size_t>& global, const std::vector<size_t>& local = {})

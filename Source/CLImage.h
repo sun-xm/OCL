@@ -4,7 +4,7 @@
 
 struct CLImgDsc : cl_image_desc
 {
-    CLImgDsc(uint32_t width, uint32_t height = 0, uint32_t depth = 0, cl_mem buffer = 0, uint32_t pitch = 0, uint32_t slice = 0, uint32_t array = 0)
+    CLImgDsc(size_t width, size_t height = 0, size_t depth = 0, cl_mem buffer = 0, size_t pitch = 0, size_t slice = 0, size_t array = 0)
     {
         *(cl_image_desc*)this = {0};
 
@@ -144,6 +144,87 @@ public:
         return *this;
     }
     CLImage& operator=(const CLImage&) = delete;
+
+    bool Read(cl_command_queue queue, const std::vector<size_t>& origin, const std::vector<size_t>& region,
+              size_t pitch, size_t slice, void* host, const std::vector<cl_event>& waits) const
+    {
+        size_t org[3] = { 0, 0, 0 };
+        size_t rgn[3] = { 1, 1, 1 };
+
+        for (size_t i = 0; i < (origin.size() < 3 ? origin.size() : 3); i++)
+        {
+            org[i] = origin[i];
+        }
+
+        for (size_t i = 0; i < (region.size() < 3 ? region.size() : 3); i++)
+        {
+            rgn[i] = region[i];
+        }
+
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        cl_event event;
+        this->err = clEnqueueReadImage(queue, this->mem, CL_FALSE, org, rgn, pitch, slice, host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
+        return true;
+    }
+
+    bool Write(cl_command_queue queue, const std::vector<size_t>& origin, const std::vector<size_t>& region,
+               size_t pitch, size_t slice, void* host, const std::vector<cl_event>& waits)
+    {
+        size_t org[3] = { 0, 0, 0 };
+        size_t rgn[3] = { 1, 1, 1 };
+
+        for (size_t i = 0; i < (origin.size() < 3 ? origin.size() : 3); i++)
+        {
+            org[i] = origin[i];
+        }
+
+        for (size_t i = 0; i < (region.size() < 3 ? region.size() : 3); i++)
+        {
+            rgn[i] = region[i];
+        }
+
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        cl_event event;
+        this->err = clEnqueueWriteImage(queue, this->mem, CL_FALSE, org, rgn, pitch, slice, host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
+        return true;
+    }
+
+    void Wait() const
+    {
+        this->err = this->evt.Wait();
+    }
 
     cl_int Error() const
     {

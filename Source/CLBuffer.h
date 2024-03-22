@@ -142,6 +142,8 @@ public:
         }
 
         this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
         return true;
     }
 
@@ -177,6 +179,8 @@ public:
         }
 
         this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
         return true;
     }
 
@@ -212,12 +216,14 @@ public:
         }
 
         this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
         return true;
     }
 
     void Wait() const
     {
-        this->evt.Wait();
+        this->err = this->evt.Wait();
     }
 
     size_t Length() const

@@ -57,13 +57,9 @@ public:
         return *this;
     }
 
-    void Wait() const
+    cl_int Wait() const
     {
-        if (this->event)
-        {
-            auto error = clWaitForEvents(1, &this->event);
-            assert(CL_SUCCESS == error);
-        }
+        return this->event ? clWaitForEvents(1, &this->event) : 0;
     }
 
     operator cl_event() const
