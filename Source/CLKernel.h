@@ -10,7 +10,7 @@
 class CLKernel
 {
 public:
-    CLKernel() : kernel(nullptr), error(0)
+    CLKernel() : kernel(nullptr), err(0)
     {
     }
     CLKernel(cl_kernel kernel) : CLKernel()
@@ -48,13 +48,13 @@ public:
         }
 
         cl_event event;
-        this->error = clEnqueueNDRangeKernel(queue, this->kernel, this->Dims(), nullptr, this->Global(), this->Local(), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
-        if (CL_SUCCESS != this->error)
+        this->err = clEnqueueNDRangeKernel(queue, this->kernel, this->Dims(), nullptr, this->Global(), this->Local(), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
         {
             return false;
         }
 
-        this->event = CLEvent(event);
+        this->evt = CLEvent(event);
         clReleaseEvent(event);
         return true;
     }
@@ -65,7 +65,7 @@ public:
         this->kernel = other.kernel;
         other.kernel = kernel;
 
-        this->event = std::move(other.event);
+        this->evt = std::move(other.evt);
 
         this->global.swap(other.global);
         this->local.swap(other.local);
@@ -90,16 +90,16 @@ public:
 
     const CLEvent& Event() const
     {
-        return this->event;
+        return this->evt;
     }
     operator cl_event() const
     {
-        return (cl_event)this->event;
+        return (cl_event)this->evt;
     }
 
     void Wait() const
     {
-        this->event.Wait();
+        this->evt.Wait();
     }
 
     void Size(const std::vector<size_t>& global, const std::vector<size_t>& local = {})
@@ -125,7 +125,7 @@ public:
 
     cl_int Error() const
     {
-        return this->error;
+        return this->err;
     }
 
     template<typename T0, typename... Tx>
@@ -154,15 +154,22 @@ public:
 protected:
     bool SetArgs(cl_uint index, const CLLocal& local)
     {
-        auto err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
-        return CL_SUCCESS == err;
+        this->err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
+        return CL_SUCCESS == this->err;
+    }
+
+    bool SetArgs(cl_uint index, const CLImage& image)
+    {
+        auto  mem = (cl_mem)image;
+        this->err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
+        return CL_SUCCESS == this->err;
     }
 
     template<typename... Tx>
     bool SetArgs(cl_uint index, const CLLocal& local, const Tx&... args)
     {
-        auto err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
-        if (CL_SUCCESS != err)
+        this->err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
+        if (CL_SUCCESS != this->err)
         {
             return false;
         }
@@ -173,16 +180,16 @@ protected:
     template<typename T>
     bool SetArgs(cl_uint index, const CLBuffer<T>& buffer)
     {
-        auto mem = (cl_mem)buffer;
-        auto err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
-        return CL_SUCCESS == err;
+        auto  mem = (cl_mem)buffer;
+        this->err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
+        return CL_SUCCESS == this->err;
     }
 
     template<typename T, typename... Tx>
     bool SetArgs(cl_uint index, const CLBuffer<T>& buffer, const Tx&... args)
     {
-        auto mem = (cl_mem)buffer;
-        auto err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
+        auto  mem = (cl_mem)buffer;
+        this->err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
         if (CL_SUCCESS != err)
         {
             return false;
@@ -194,15 +201,15 @@ protected:
     template<typename T0>
     bool SetArgs(cl_uint index, const T0& arg0)
     {
-        auto err = clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
-        return CL_SUCCESS == err;
+        this->err = clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
+        return CL_SUCCESS == this->err;
     }
 
     template<typename T0, typename... Tx>
     bool SetArgs(cl_uint index, const T0& arg0, const Tx&... args)
     {
-        auto err = clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
-        if (CL_SUCCESS != err)
+        this->err = clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
+        if (CL_SUCCESS != this->err)
         {
             return false;
         }
@@ -215,6 +222,6 @@ protected:
     std::vector<size_t> global;
     std::vector<size_t> local;
 
-    mutable cl_int  error;
-    mutable CLEvent event;
+    mutable cl_int  err;
+    mutable CLEvent evt;
 };

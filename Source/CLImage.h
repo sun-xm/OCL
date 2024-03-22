@@ -139,6 +139,8 @@ public:
         other.mem = mem;
         other.err = err;
 
+        this->evt = std::move(other.evt);
+
         return *this;
     }
     CLImage& operator=(const CLImage&) = delete;

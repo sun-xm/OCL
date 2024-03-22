@@ -50,6 +50,8 @@ public:
         other.len = len;
         other.err = err;
 
+        this->evt = std::move(other.evt);
+
         return *this;
     }
     CLBuffer& operator=(const CLBuffer& other) = delete;
