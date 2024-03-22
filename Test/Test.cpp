@@ -230,15 +230,15 @@ int Test::ImageReadWrite()
     }
 
     // TODO: image need to be touched by kernels before can be read out correctly. Why?
-    auto check = this->program.CreateKernel("touchImage");
-    check.Args(img);
-    check.Size({ 1, 1 });
-    this->queue.Execute(check, { img });
+    auto touch = this->program.CreateKernel("touchImage");
+    touch.Args(img);
+    touch.Size({ 1, 1 });
+    this->queue.Execute(touch, { img });
 
     pix.clear();
     pix.resize(100 * 100, 0);
 
-    img.Read(this->queue, { 0, 0 }, { 100, 100 }, 0, 0, &pix[0], { img });
+    img.Read(this->queue, { 0, 0 }, { 100, 100 }, 0, 0, &pix[0], { touch });
     if (img.Error())
     {
         return -1;
