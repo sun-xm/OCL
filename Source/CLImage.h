@@ -10,9 +10,9 @@ struct CLImgDsc : cl_image_desc
     }
     CLImgDsc(size_t width, size_t height = 1, size_t depth = 1, cl_mem buffer = 0, size_t pitch = 0, size_t slice = 0, size_t array = 0) : CLImgDsc()
     {
-        if (!width)
+        if (!width || !height || !depth)
         {
-            throw std::runtime_error("Invalid width");
+            throw std::runtime_error("Invalid size");
         }
 
         uint32_t dims = 1;
@@ -23,7 +23,7 @@ struct CLImgDsc : cl_image_desc
 
         if (depth > 1)
         {
-            if (height <= 1)
+            if (height == 1)
             {
                 throw std::runtime_error("Invalid height");
             }

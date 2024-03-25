@@ -1,8 +1,6 @@
 #pragma once
 
-#include "CLBuffer.h"
 #include "CLDevice.h"
-#include "CLImage.h"
 #include "CLPlatform.h"
 #include "CLProgram.h"
 #include "CLQueue.h"
@@ -266,16 +264,6 @@ public:
     CLQueue   CreateQueue()
     {
         return CLQueue::Create(this->context);
-    }
-    CLImage   CreateImage(uint32_t flags, const CLImgFmt& format, const CLImgDsc& descriptor)
-    {
-        return CLImage::Create(this->context, flags, format, descriptor);
-    }
-
-    template<typename T>
-    CLBuffer<T> CreateBuffer(uint32_t flags, size_t length)
-    {
-        return CLBuffer<T>::Create(this->context, flags, length);
     }
 
     CLDevice Device() const

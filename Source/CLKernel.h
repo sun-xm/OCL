@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CLBuffer.h"
+#include "CLImage.h"
 #include "CLLocal.h"
 #include <stdexcept>
 #include <string>
@@ -36,6 +37,11 @@ public:
         }
     }
 
+    bool Execute(cl_command_queue queue) const
+    {
+        ONCLEANUP(wait, [this]{ this->Wait(); });
+        return this->Execute(queue, {});
+    }
     bool Execute(cl_command_queue queue, const std::vector<cl_event>& waits) const
     {
         std::vector<cl_event> events;

@@ -76,13 +76,13 @@ int Test::BufferMapCopy()
 
     const size_t length = 128;
 
-    auto src = this->context.CreateBuffer<int>(CLFlags::RO, length);
+    auto src = CLBuffer<int>::Create(this->context, CLFlags::RO, length);
     if (!src)
     {
         return -1;
     }
 
-    auto map = this->queue.Map(src, CLFlags::WO);
+    auto map = src.Map(this->queue, CLFlags::WO);
     if (!map)
     {
         return -1;
@@ -94,23 +94,23 @@ int Test::BufferMapCopy()
     }
     map.Unmap();
 
-    auto dst = this->context.CreateBuffer<int>(CLFlags::WO, length);
+    auto dst = CLBuffer<int>::Create(this->context, CLFlags::WO, length);
     if (!dst)
     {
         return -1;
     }
 
-    if (!this->queue.Copy(src, dst))
+    if (!dst.Copy(this->queue, src))
     {
         return -1;
     }
 
-    if (!(map = this->queue.Map(dst, CLFlags::RO)))
+    if (!(map = dst.Map(this->queue, CLFlags::RO)))
     {
         return -1;
     }
 
-    for (size_t i = 0; i < length; i++)
+    for (size_t i = 0; i < dst.Length(); i++)
     {
         if (map[i] != (int)i)
         {
@@ -136,19 +136,19 @@ int Test::BufferReadWrite()
         src[i] = (int)i;
     }
 
-    auto buf = this->context.CreateBuffer<int>(CLFlags::RW, length);
+    auto buf = CLBuffer<int>::Create(this->context, CLFlags::RW, length);
     if (!buf)
     {
         return -1;
     }
 
-    if (!this->queue.Write(buf, src.data()))
+    if (!buf.Write(this->queue, src.data()))
     {
         return -1;
     }
 
     vector<int> dst(length);
-    if (!this->queue.Read(buf, &dst[0]))
+    if (!buf.Read(this->queue, &dst[0]))
     {
         return -1;
     }
@@ -171,34 +171,26 @@ int Test::ImageCreation()
         return -1;
     }
 
-    auto img = this->context.CreateImage(CLFlags::RO,
-                                         CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8),
-                                         CLImgDsc(100));
+    auto img = CLImage::Create(this->context, CLFlags::RO, CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8), CLImgDsc(100));
     if (!img || img.Error())
     {
         return -1;
     }
 
-    img = this->context.CreateImage(CLFlags::WO,
-                                    CLImgFmt(CL_R, CL_UNSIGNED_INT16),
-                                    CLImgDsc(100, 100));
+    img = CLImage::Create(this->context, CLFlags::WO, CLImgFmt(CL_R, CL_UNSIGNED_INT16), CLImgDsc(100, 100));
     if (!img || img.Error())
     {
         return -1;
     }
 
-    img = this->context.CreateImage(CLFlags::RW,
-                                    CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8),
-                                    CLImgDsc(100, 100, 100));
+    img = CLImage::Create(this->context, CLFlags::RW, CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8), CLImgDsc(100, 100, 100));
     if (!img || img.Error())
     {
         return -1;
     }
 
-    auto buf = this->context.CreateBuffer<uint32_t>(CLFlags::RW, 100);
-    img = this->context.CreateImage(CLFlags::RW,
-                                    CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8),
-                                    CLImgDsc(100, 0, 0, buf));
+    auto buf = CLBuffer<uint32_t>::Create(this->context, CLFlags::RW, 100);
+    img = CLImage::Create(this->context, CLFlags::RW, CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8), CLImgDsc(100, 1, 1, buf));
     if (!img || img.Error())
     {
         return -1;
@@ -217,7 +209,7 @@ int Test::ImageMapCopy()
     const size_t w = 100;
     const size_t h = 100;
 
-    auto src = this->context.CreateImage(CLFlags::RW, CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8), CLImgDsc(w, h));
+    auto src = CLImage::Create(this->context, CLFlags::RW, CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8), CLImgDsc(w, h));
     if (!src)
     {
         return -1;
@@ -241,7 +233,7 @@ int Test::ImageMapCopy()
     }
     map.Unmap();
 
-    auto dst = this->context.CreateImage(CLFlags::RW, src.Format(), CLImgDsc(w / 2, h / 2));
+    auto dst = CLImage::Create(this->context, CLFlags::RW, src.Format(), CLImgDsc(w / 2, h / 2));
     if (!dst)
     {
         return -1;
@@ -279,9 +271,7 @@ int Test::ImageReadWrite()
     const uint32_t w = 100;
     const uint32_t h = 100;
 
-    auto img = this->context.CreateImage(CLFlags::RW,
-                                         CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8),
-                                         CLImgDsc(w, h));
+    auto img = CLImage::Create(this->context, CLFlags::RW, CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8), CLImgDsc(w, h));
     if (!img || img.Error())
     {
         return -1;
@@ -298,7 +288,7 @@ int Test::ImageReadWrite()
     auto touch = this->program.CreateKernel("touchImage");
     touch.Args(img);
     touch.Size({ w, h });
-    this->queue.Execute(touch, { img });
+    touch.Execute(this->queue, { img });
 
     const uint32_t x = 50;
     const uint32_t y = 50;
@@ -333,13 +323,13 @@ int Test::KernelExecute()
 
     const size_t length = 128;
 
-    auto src = this->context.CreateBuffer<int>(CLFlags::RO, length);
+    auto src = CLBuffer<int>::Create(this->context, CLFlags::RO, length);
     if (!src)
     {
         return -1;
     }
 
-    auto map = this->queue.Map(src, CLFlags::WO);
+    auto map = src.Map(this->queue, CLFlags::WO);
     if (!map)
     {
         return -1;
@@ -351,7 +341,7 @@ int Test::KernelExecute()
     }
     map.Unmap();
 
-    auto dst = this->context.CreateBuffer<int>(CLFlags::WO, length);
+    auto dst = CLBuffer<int>::Create(this->context, CLFlags::WO, length);
     if (!dst)
     {
         return -1;
@@ -365,12 +355,12 @@ int Test::KernelExecute()
 
     copy.Args(src, dst);
     copy.Size({ length });
-    if (!this->queue.Execute(copy))
+    if (!copy.Execute(this->queue))
     {
         return -1;
     }
 
-    map = this->queue.Map(dst, CLFlags::RO);
+    map = dst.Map(this->queue, CLFlags::RO);
     if (!map)
     {
         return -1;
@@ -396,13 +386,13 @@ int Test::KernelBtsort()
 
     const int power = 10;
 
-    auto arr = this->context.CreateBuffer<int>(CLFlags::RW, 1 << power);
+    auto arr = CLBuffer<int>::Create(this->context, CLFlags::RW, 1 << power);
     if (!arr)
     {
         return -1;
     }
 
-    auto map = this->queue.Map(arr, CLFlags::WO);
+    auto map = arr.Map(this->queue, CLFlags::WO);
     if (!map)
     {
         return -1;
@@ -431,14 +421,14 @@ int Test::KernelBtsort()
         for (int j = i; j >= 0; j--)
         {
             if (!btsort.Args(j, tsize, arr) ||
-                !this->queue.Execute(btsort))
+                !btsort.Execute(this->queue))
             {
                 return -1;
             }
         }
     }
 
-    map = this->queue.Map(arr, CLFlags::RO);
+    map = arr.Map(this->queue, CLFlags::RO);
     if (!map)
     {
         return -1;
@@ -464,13 +454,13 @@ int Test::EventMapCopy()
 
     const size_t length = 128;
 
-    auto src = this->context.CreateBuffer<int>(CLFlags::RO, length);
+    auto src = CLBuffer<int>::Create(this->context, CLFlags::RO, length);
     if (!src)
     {
         return -1;
     }
 
-    auto map = this->queue.Map(src, CLFlags::WO, {});
+    auto map = src.Map(this->queue, CLFlags::WO, {});
     if (!map)
     {
         return -1;
@@ -487,18 +477,18 @@ int Test::EventMapCopy()
 
     map.Unmap({ map });
 
-    auto dst = this->context.CreateBuffer<int>(CLFlags::WO, length);
+    auto dst = CLBuffer<int>::Create(this->context, CLFlags::WO, length);
     if (!dst)
     {
         return -1;
     }
 
-    if (!this->queue.Copy(src, dst, { map }))
+    if (!dst.Copy(this->queue, src, { map }))
     {
         return -1;
     }
 
-    if (!(map = this->queue.Map(dst, CLFlags::RW, { dst })))
+    if (!(map = dst.Map(this->queue, CLFlags::RW, { dst })))
     {
         return -1;
     }
@@ -532,19 +522,19 @@ int Test::EventReadWrite()
         src[i] = (int)i;
     }
 
-    auto buf = this->context.CreateBuffer<int>(CLFlags::RW, length);
+    auto buf = CLBuffer<int>::Create(this->context, CLFlags::RW, length);
     if (!buf)
     {
         return -1;
     }
 
-    if (!this->queue.Write(buf, src.data(), {}))
+    if (!buf.Write(this->queue, src.data(), {}))
     {
         return -1;
     }
 
     vector<int> dst(length);
-    if (!this->queue.Read(buf, &dst[0], { buf }))
+    if (!buf.Read(this->queue, &dst[0], { buf }))
     {
         return -1;
     }
@@ -570,13 +560,13 @@ int Test::EventExecute()
 
     const size_t length = 128;
 
-    auto src = this->context.CreateBuffer<int>(CLFlags::RO, length);
+    auto src = CLBuffer<int>::Create(this->context, CLFlags::RO, length);
     if (!src)
     {
         return -1;
     }
 
-    auto map = this->queue.Map(src, CLFlags::WO, {});
+    auto map = src.Map(this->queue, CLFlags::WO, {});
     if (!map)
     {
         return -1;
@@ -592,7 +582,7 @@ int Test::EventExecute()
     }
     map.Unmap({ map });
 
-    auto dst = this->context.CreateBuffer<int>(CLFlags::WO, length);
+    auto dst = CLBuffer<int>::Create(this->context, CLFlags::WO, length);
     if (!dst)
     {
         return -1;
@@ -606,12 +596,12 @@ int Test::EventExecute()
 
     copy.Args(src, dst);
     copy.Size({ length });
-    if (!this->queue.Execute(copy, { map }))
+    if (!copy.Execute(this->queue, { map }))
     {
         return -1;
     }
 
-    map = this->queue.Map(dst, CLFlags::RO, { copy });
+    map = dst.Map(this->queue, CLFlags::RO, { copy });
     if (!map)
     {
         return -1;
