@@ -83,12 +83,12 @@ int Test::BufferMapCopy()
     }
 
     auto map = this->queue.Map(src, CLFlags::WO);
-    if (!map || map.Length() != src.Length())
+    if (!map)
     {
         return -1;
     }
 
-    for (size_t i = 0; i < map.Length(); i++)
+    for (size_t i = 0; i < src.Length(); i++)
     {
         map[i] = (int)i;
     }
@@ -207,6 +207,68 @@ int Test::ImageCreation()
     return 0;
 }
 
+int Test::ImageMapCopy()
+{
+    if (!*this)
+    {
+        return -1;
+    }
+
+    const size_t w = 100;
+    const size_t h = 100;
+
+    auto src = this->context.CreateImage(CLFlags::RW, CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8), CLImgDsc(w, h));
+    if (!src)
+    {
+        return -1;
+    }
+
+    size_t pitch, slice;
+    auto map = src.Map<uint32_t>(this->queue, CLFlags::WO, pitch, slice);
+    if (!map)
+    {
+        return -1;
+    }
+
+    for (size_t i = 0; i < src.Height(); i++)
+    {
+        auto ptr = (uint32_t*)((uint8_t*)&map[0] + i * pitch);
+
+        for (size_t j = 0; j < src.Width(); j++)
+        {
+            ptr[j] = 0x11223344;
+        }
+    }
+    map.Unmap();
+
+    auto dst = this->context.CreateImage(CLFlags::RW, src.Format(), CLImgDsc(w / 2, h / 2));
+    if (!dst)
+    {
+        return -1;
+    }
+
+    if (!dst.Copy(this->queue, src))
+    {
+        return -1;
+    }
+
+    map = dst.Map<uint32_t>(this->queue, CLFlags::RO, pitch, slice);
+    for (size_t i = 0; i < dst.Height(); i++)
+    {
+        auto ptr = (uint32_t*)((uint8_t*)&map[0] + i * pitch);
+
+        for (size_t j = 0; j < dst.Width(); j++)
+        {
+            if (0x11223344 != ptr[j])
+            {
+                return -1;
+            }
+        }
+    }
+
+    return 0;
+}
+
 int Test::ImageReadWrite()
 {
     if (!*this || !this->CreateProgram())
@@ -214,31 +276,37 @@ int Test::ImageReadWrite()
         return -1;
     }
 
+    const uint32_t w = 100;
+    const uint32_t h = 100;
+
     auto img = this->context.CreateImage(CLFlags::RW,
                                          CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8),
-                                         CLImgDsc(100, 100));
+                                         CLImgDsc(w, h));
     if (!img || img.Error())
     {
         return -1;
     }
 
-    vector<uint32_t> pix(100 * 100, 0xFFFEFDFC);
-    img.Write(this->queue, { 0, 0 }, { 100, 100 }, 0, 0, pix.data(), {});
+    vector<uint32_t> pix(w * h, 0xFFFEFDFC);
+    img.Write(this->queue, { 0, 0 }, { w, h }, 0, 0, pix.data(), {});
     if (img.Error())
     {
         return -1;
     }
 
-    // TODO: image need to be touched by kernels before can be read out correctly. Why?
+    // Looks on Intel platform image need to be touched by kernels before can be read out correctly.
     auto touch = this->program.CreateKernel("touchImage");
     touch.Args(img);
-    touch.Size({ 1, 1 });
+    touch.Size({ w, h });
     this->queue.Execute(touch, { img });
 
-    pix.clear();
-    pix.resize(100 * 100, 0);
+    const uint32_t x = 50;
+    const uint32_t y = 50;
 
-    img.Read(this->queue, { 0, 0 }, { 100, 100 }, 0, 0, &pix[0], { touch });
+    pix.clear();
+    pix.resize((w - x) * (h - y), 0);
+
+    img.Read(this->queue, { x, y }, { w - x, h - y }, 0, 0, &pix[0], { img });
     if (img.Error())
     {
         return -1;
@@ -403,7 +471,7 @@ int Test::EventMapCopy()
     }
 
     auto map = this->queue.Map(src, CLFlags::WO, {});
-    if (!map || map.Length() != src.Length())
+    if (!map)
     {
         return -1;
     }
@@ -412,7 +480,7 @@ int Test::EventMapCopy()
     // Mapped write-only memory is cleared with zeros through mapping. Not understandable.
     map.Wait();
 
-    for (size_t i = 0; i < map.Length(); i++)
+    for (size_t i = 0; i < src.Length(); i++)
     {
         map[i] = (int)i;
     }
@@ -435,14 +503,9 @@ int Test::EventMapCopy()
         return -1;
     }
 
-    if (map.Length () != dst.Length())
-    {
-        return -1;
-    }
-
     map.Wait();
 
-    for (size_t i = 0; i < map.Length(); i++)
+    for (size_t i = 0; i < dst.Length(); i++)
     {
         auto m = map[i];
         if (map[i] != (int)i)

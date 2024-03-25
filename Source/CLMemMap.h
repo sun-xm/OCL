@@ -7,10 +7,10 @@ template<typename T>
 class CLMemMap
 {
 public:
-    CLMemMap() : map(nullptr), mem(nullptr), queue(nullptr), len(0)
+    CLMemMap() : map(nullptr), mem(nullptr), que(nullptr)
     {
     }
-    CLMemMap(cl_mem mem, cl_command_queue queue, cl_event event, void* map, size_t len) : CLMemMap()
+    CLMemMap(cl_mem mem, cl_command_queue queue, cl_event event, void* map) : CLMemMap()
     {
         if (mem && CL_SUCCESS == clRetainMemObject(mem))
         {
@@ -18,9 +18,8 @@ public:
             {
                 this->map = map;
                 this->mem = mem;
-                this->len = len;
-                this->queue = queue;
-                this->event = CLEvent(event);
+                this->que = queue;
+                this->evt = CLEvent(event);
             }
             else
             {
@@ -42,21 +41,18 @@ public:
     {
         auto map = this->map;
         auto mem = this->mem;
-        auto len = this->len;
-        auto que = this->queue;
-        auto evt = this->event;
+        auto que = this->que;
+        auto evt = this->evt;
 
         this->map = other.map;
         this->mem = other.mem;
-        this->len = other.len;
-        this->queue = other.queue;
-        this->event = other.event;
+        this->que = other.que;
+        this->evt = other.evt;
 
         other.map = map;
         other.mem = mem;
-        other.len = len;
-        other.queue = que;
-        other.event = evt;
+        other.que = que;
+        other.evt = evt;
 
         return *this;
     }
@@ -81,12 +77,10 @@ public:
             }
 
             cl_event event;
-            auto err = clEnqueueUnmapMemObject(this->queue, this->mem, this->map, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+            auto err = clEnqueueUnmapMemObject(this->que, this->mem, this->map, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
             assert(CL_SUCCESS == err);
             this->map = nullptr;
-            this->len = 0;
-
-            this->event = CLEvent(event);
+            this->evt = CLEvent(event);
             clReleaseEvent(event);
         }
 
@@ -96,30 +90,25 @@ public:
             this->mem = nullptr;
         }
 
-        if (this->queue)
+        if (this->que)
         {
-            clReleaseCommandQueue(this->queue);
-            this->queue = nullptr;
+            clReleaseCommandQueue(this->que);
+            this->que = nullptr;
         }
     }
 
     void Wait() const
     {
-        this->event.Wait();
+        this->evt.Wait();
     }
 
     CLEvent Event() const
     {
-        return this->event;
+        return this->evt;
     }
     operator cl_event() const
     {
-        return (cl_event)this->event;
-    }
-
-    size_t Length() const
-    {
-        return this->len;
+        return (cl_event)this->evt;
     }
 
     T& operator[](size_t index)
@@ -138,9 +127,8 @@ public:
 
 protected:
     void*  map;
-    size_t len;
     cl_mem mem;
-    cl_command_queue queue;
+    cl_command_queue que;
 
-    mutable CLEvent event;
+    mutable CLEvent evt;
 };

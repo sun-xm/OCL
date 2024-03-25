@@ -13,6 +13,7 @@ public:
     int BufferMapCopy();
     int BufferReadWrite();
     int ImageCreation();
+    int ImageMapCopy();
     int ImageReadWrite();
     int KernelExecute();
     int KernelBtsort();

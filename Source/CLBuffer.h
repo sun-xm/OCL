@@ -107,7 +107,7 @@ public:
         this->evt = CLEvent(event);
         clReleaseEvent(event);
 
-        return CLMemMap<T>(this->mem, queue, event, map, length);
+        return CLMemMap<T>(this->mem, queue, event, map);
     }
 
     bool Copy(cl_command_queue queue, const CLBuffer& source)
