@@ -59,6 +59,16 @@ public:
         this->Info(CL_DEVICE_MAX_WORK_GROUP_SIZE, size);
         return size;
     }
+    size_t MemBaseAddrAlignBits() const
+    {
+        cl_uint bits;
+        this->Info(CL_DEVICE_MEM_BASE_ADDR_ALIGN, bits);
+        return (size_t)bits;
+    }
+    size_t MemBaseAddrAlign() const
+    {
+        return this->MemBaseAddrAlignBits() / 8;
+    }
     size_t LocalMemSize() const
     {
         cl_ulong size;

@@ -12,6 +12,8 @@ public:
     int ContextDevice();
     int BufferMapCopy();
     int BufferReadWrite();
+    int Buff2DMapCopy();
+    int Buff2DReadWrite();
     int ImageCreation();
     int ImageMapCopy();
     int ImageReadWrite();

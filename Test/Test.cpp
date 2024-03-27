@@ -64,6 +64,10 @@ int Test::ContextDevice()
     cout << "Profile: " << device.Profile() << endl;
     cout << "Extends: " << device.Extensions() << endl;
 
+    cout << "MaxWorkGroupSize: " << device.MaxWorkGroupSize() << endl;
+    cout << "MemBaseAddrAlign: " << device.MemBaseAddrAlign() << endl;
+    cout << "LocalMemSize:     " << device.LocalMemSize() << endl;
+
     return 0;
 }
 
@@ -158,6 +162,95 @@ int Test::BufferReadWrite()
         if (src[i] != dst[i])
         {
             return -1;
+        }
+    }
+
+    return 0;
+}
+
+int Test::Buff2DMapCopy()
+{
+    return 0;
+}
+
+int Test::Buff2DReadWrite()
+{
+    if (!*this)
+    {
+        return -1;
+    }
+
+    const size_t W = 100;
+    const size_t H = 100;
+
+    auto buf = CLBuff2D<int>::Create(this->context, CLFlags::RW, W, H, 0);
+    if (!buf || 0 != buf.Error())
+    {
+        return -1;
+    }
+
+    vector<int> src(W * H, 123);
+    if (!buf.Write(this->queue, 0, 0, W, H, src.data(), 0, 0, W * sizeof(int), {}))
+    {
+        return -1;
+    }
+    buf.Wait();
+
+    const size_t HW = W / 2;
+    const size_t HH = H / 2;
+
+    src.clear();
+    src.resize(HW * HH, 321);
+    if (!buf.Write(this->queue, HW, HH, HW, HH, src.data(), 0, 0, HW * sizeof(int), {}))
+    {
+        return -1;
+    }
+    buf.Wait();
+
+    vector<int> dst(W * H, 0);
+    if (!buf.Read(this->queue, 0, 0, HW, HH, &dst[0], 0, 0, W * sizeof(int), {}))
+    {
+        return -1;
+    }
+    buf.Wait();
+
+    for (size_t i = 0; i < H; i++)
+    {
+        for (size_t j = 0; j < W; j++)
+        {
+            auto d = dst[i * W + j];
+
+            if (i < HH && j < HW)
+            {
+                if (123 != d)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (0 != d)
+                {
+                    return false;
+                }
+            }
+        }
+    }
+
+    if (!buf.Read(this->queue, HW, 0, HW, HH, &dst[0], 10, 10, W * sizeof(int), {}))
+    {
+        return -1;
+    }
+    buf.Wait();
+
+    for (size_t i = 0; i < HH; i++)
+    {
+        for (size_t j = 0; j < HW; j++)
+        {
+            if (321 != dst[i * W + j])
+            {
+                return -1;
+            }
         }
     }
 
@@ -278,7 +371,7 @@ int Test::ImageReadWrite()
     }
 
     vector<uint32_t> pix(w * h, 0xFFFEFDFC);
-    img.Write(this->queue, { 0, 0 }, { w, h }, 0, 0, pix.data(), {});
+    img.Write(this->queue, { 0, 0 }, { w, h }, pix.data(), 0, 0, {});
     if (img.Error())
     {
         return -1;
@@ -296,7 +389,7 @@ int Test::ImageReadWrite()
     pix.clear();
     pix.resize((w - x) * (h - y), 0);
 
-    img.Read(this->queue, { x, y }, { w - x, h - y }, 0, 0, &pix[0], { img });
+    img.Read(this->queue, { x, y }, { w - x, h - y }, &pix[0], 0, 0, { img });
     if (img.Error())
     {
         return -1;

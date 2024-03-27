@@ -115,11 +115,15 @@ public:
     }
     CLImage(cl_mem image, cl_int error, const CLImgFmt& format, const CLImgDsc& descriptor) : CLImage()
     {
-        if (image && CL_SUCCESS == clRetainMemObject(image))
+        if (CL_SUCCESS == error && image)
         {
-            this->mem = image;
-            this->fmt = format;
-            this->dsc = descriptor;
+            error = clRetainMemObject(image);
+            if (CL_SUCCESS == error)
+            {
+                this->mem = image;
+                this->fmt = format;
+                this->dsc = descriptor;
+            }
         }
         this->err = error;
     }
@@ -163,12 +167,12 @@ public:
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, size_t& pitch, size_t& slice)
     {
         ONCLEANUP(wait, [this]{ this->Wait(); });
-        return this->Map<T>(queue, flags, {}, pitch, slice);
+        return this->Map<T>(queue, flags, pitch, slice, {});
     }
     template<typename T>
-    CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, const std::vector<cl_event>& waits, size_t& pitch, size_t& slice)
+    CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, size_t& pitch, size_t& slice, const std::vector<cl_event>& waits)
     {
-        return this->Map<T>(queue, flags, { 0, 0, 0 }, { this->dsc.image_width, this->dsc.image_height, this->dsc.image_depth }, waits, pitch, slice);
+        return this->Map<T>(queue, flags, { 0, 0, 0 }, { this->dsc.image_width, this->dsc.image_height, this->dsc.image_depth }, pitch, slice, waits);
     }
     template<typename T>
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, const std::vector<size_t>& origin, const std::vector<size_t>& region,
@@ -179,7 +183,7 @@ public:
     }
     template<typename T>
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, const std::vector<size_t>& origin, const std::vector<size_t>& region,
-                    const std::vector<cl_event>& waits, size_t& pitch, size_t& slice)
+                    size_t& pitch, size_t& slice, const std::vector<cl_event>& waits)
     {
         if (!this->mem)
         {
@@ -269,16 +273,16 @@ public:
     }
     bool Read(cl_command_queue queue, void* host, const std::vector<cl_event>& waits) const
     {
-        return this->Read(queue, { 0, 0, 0 }, { this->dsc.image_width, this->dsc.image_height, this->dsc.image_depth }, 0, 0, host, waits);
+        return this->Read(queue, { 0, 0, 0 }, { this->dsc.image_width, this->dsc.image_height, this->dsc.image_depth }, host, 0, 0, waits);
     }
     bool Read(cl_command_queue queue, const std::vector<size_t>& origin, const std::vector<size_t>& region,
-              size_t pitch, size_t slice, void * host) const
+              void* host, size_t pitch, size_t slice) const
     {
         ONCLEANUP(wait, [this]{ this->Wait(); });
-        return this->Read(queue, origin, region, pitch, slice, host, {});
+        return this->Read(queue, origin, region, host, pitch, slice, {});
     }
     bool Read(cl_command_queue queue, const std::vector<size_t>& origin, const std::vector<size_t>& region,
-              size_t pitch, size_t slice, void* host, const std::vector<cl_event>& waits) const
+              void* host, size_t pitch, size_t slice, const std::vector<cl_event>& waits) const
     {
         size_t org[3] = { 0, 0, 0 };
         size_t rgn[3] = { 1, 1, 1 };
@@ -322,16 +326,16 @@ public:
     }
     bool Write(cl_command_queue queue, void* host, const std::vector<cl_event>& waits)
     {
-        return this->Write(queue, { 0, 0, 0 }, { this->dsc.image_width, this->dsc.image_height, this->dsc.image_depth }, 0, 0, host, waits);
+        return this->Write(queue, { 0, 0, 0 }, { this->dsc.image_width, this->dsc.image_height, this->dsc.image_depth }, host, 0, 0, waits);
     }
     bool Write(cl_command_queue queue, const std::vector<size_t>& origin, const std::vector<size_t>& region,
-               size_t pitch, size_t slice, void* host)
+               void* host, size_t pitch, size_t slice)
     {
         ONCLEANUP(wait, [this]{ this->Wait(); });
-        return this->Write(queue, origin, region, pitch, slice, host, {});
+        return this->Write(queue, origin, region, host, pitch, slice, {});
     }
     bool Write(cl_command_queue queue, const std::vector<size_t>& origin, const std::vector<size_t>& region,
-               size_t pitch, size_t slice, void* host, const std::vector<cl_event>& waits)
+               void* host, size_t pitch, size_t slice, const std::vector<cl_event>& waits)
     {
         size_t org[3] = { 0, 0, 0 };
         size_t rgn[3] = { 1, 1, 1 };

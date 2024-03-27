@@ -16,10 +16,14 @@ public:
     }
     CLBuffer(cl_mem mem, size_t length, cl_int error) : CLBuffer()
     {
-        if (mem && length && CL_SUCCESS == clRetainMemObject(mem))
+        if (CL_SUCCESS == error && mem && length)
         {
-            this->mem = mem;
-            this->len = length;
+            error = clRetainMemObject(mem);
+            if (CL_SUCCESS == error)
+            {
+                this->mem = mem;
+                this->len = length;
+            }
         }
         this->err = error;
     }
@@ -54,7 +58,7 @@ public:
 
         return *this;
     }
-    CLBuffer& operator=(const CLBuffer& other) = delete;
+    CLBuffer& operator=(const CLBuffer&) = delete;
 
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags)
     {
@@ -284,6 +288,11 @@ public:
 
         cl_int error;
         auto buffer = clCreateBuffer(context, mflags, length * sizeof(T), nullptr, &error);
+        if (CL_SUCCESS != error)
+        {
+            return CLBuffer(0, 0, error);
+        }
+
         ONCLEANUP(buffer, [=]{ if (buffer) clReleaseMemObject(buffer); });
         return CLBuffer(buffer, length, error);
     }
@@ -291,6 +300,219 @@ public:
 protected:
     cl_mem mem;
     size_t len;
+    mutable cl_int  err;
+    mutable CLEvent evt;
+};
+
+template<typename T>
+class CLBuff2D
+{
+public:
+    CLBuff2D() : mem(nullptr), err(0), pitch(0), width(0), height(0)
+    {
+    }
+    CLBuff2D(cl_mem mem, size_t width, size_t height, size_t pitch, cl_int error) : CLBuff2D()
+    {
+        if (CL_SUCCESS == error && mem && width && height && pitch)
+        {
+            error = clRetainMemObject(mem);
+            if (CL_SUCCESS == error)
+            {
+                this->mem    = mem;
+                this->pitch  = pitch;
+                this->width  = width;
+                this->height = height;
+            }
+        }
+        this->err = error;
+    }
+    CLBuff2D(CLBuff2D&& other) : CLBuff2D()
+    {
+        *this = std::move(other);
+    }
+    CLBuff2D(const CLBuff2D&) = delete;
+    virtual ~CLBuff2D()
+    {
+        if (this->mem)
+        {
+            clReleaseMemObject(this->mem);
+        }
+    }
+
+    CLBuff2D& operator=(CLBuff2D&& other)
+    {
+        auto mem    = this->mem;
+        auto err    = this->err;
+        auto pitch  = this->pitch;
+        auto width  = this->width;
+        auto height = this->height;
+
+        this->mem    = other.mem;
+        this->err    = other.err;
+        this->pitch  = other.pitch;
+        this->width  = other.width;
+        this->height = other.height;
+
+        other.mem    = mem;
+        other.err    = err;
+        other.pitch  = pitch;
+        other.width  = width;
+        other.height = height;
+
+        this->evt = std::move(other.evt);
+
+        return *this;
+    }
+    CLBuff2D& operator=(const CLBuff2D&) = delete;
+
+    bool Read(cl_command_queue queue, size_t x, size_t y, size_t width, size_t hight, T* host, size_t hostX, size_t hostY, size_t pitch, const std::vector<cl_event>& waits)
+    {
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        size_t borigin[3] = { x * sizeof(T), y, 0 };
+        size_t horigin[3] = { hostX * sizeof(T), hostY,  0 };
+        size_t region[3]  = { width * sizeof(T), height, 1 };
+
+        cl_event event;
+        this->err = clEnqueueReadBufferRect(queue, this->mem, CL_FALSE, borigin, horigin, region, this->pitch, 0, pitch, 0, host,
+                                            (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
+        return true;
+    }
+
+    bool Write(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, const T* host, size_t hostX, size_t hostY, size_t pitch, const std::vector<cl_event>& waits)
+    {
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        size_t borigin[3] = { x * sizeof(T), y, 0 };
+        size_t horigin[3] = { hostX * sizeof(T), hostY,  0 };
+        size_t region[3]  = { width * sizeof(T), height, 1 };
+
+        cl_event event;
+        this->err = clEnqueueWriteBufferRect(queue, this->mem, CL_FALSE, borigin, horigin, region, this->pitch, 0, pitch, 0, host,
+                                            (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
+        return true;
+    }
+
+    void Wait() const
+    {
+        this->err = this->evt.Wait();
+    }
+
+    size_t Width() const
+    {
+        return this->width;
+    }
+
+    size_t Height() const
+    {
+        return this->height;
+    }
+
+    size_t Pitch() const
+    {
+        return this->pitch;
+    }
+
+    cl_int Error() const
+    {
+        return this->err;
+    }
+
+    operator cl_event() const
+    {
+        return this->evt;
+    }
+
+    operator cl_mem() const
+    {
+        return this->mem;
+    }
+
+    operator bool() const
+    {
+        return !!this->mem;
+    }
+
+    static CLBuff2D Create(cl_context context, uint32_t flags, size_t width, size_t height, size_t pitch)
+    {
+        cl_mem_flags mflags;
+        switch (flags)
+        {
+            case CLFlags::RW:
+            {
+                mflags = CL_MEM_READ_WRITE;
+                break;
+            }
+
+            case CLFlags::RO:
+            {
+                mflags = CL_MEM_READ_ONLY;
+                break;
+            }
+
+            case CLFlags::WO:
+            {
+                mflags = CL_MEM_WRITE_ONLY;
+                break;
+            }
+
+            default:
+                throw std::runtime_error("Unsupported memory creation flag");
+        }
+
+        if (0 == pitch)
+        {
+            auto align = CLContext(context).Device().MemBaseAddrAlign();
+            pitch = (width * sizeof(T) + align - 1) / align * align;
+        }
+
+        cl_int error;
+        auto buffer = clCreateBuffer(context, mflags, pitch * height, nullptr, &error);
+        if (CL_SUCCESS != error)
+        {
+            return CLBuff2D(0, 0, 0, 0, error);
+        }
+
+        ONCLEANUP(buffer, [buffer]{ if (buffer) clReleaseMemObject(buffer); });
+        return CLBuff2D(buffer, width, height, pitch, error);
+    }
+
+protected:
+    cl_mem mem;
+    size_t pitch;
+    size_t width;
+    size_t height;
+
     mutable cl_int  err;
     mutable CLEvent evt;
 };
