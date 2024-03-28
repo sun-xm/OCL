@@ -2,6 +2,8 @@
 #include <fstream>
 #include <random>
 
+#define ASSERT(o) if (!o || 0 != o.Error()) return -1
+
 using namespace std;
 
 Test::Test()
@@ -180,35 +182,30 @@ int Test::Buff2DReadWrite()
         return -1;
     }
 
-    const size_t W = 100;
-    const size_t H = 100;
+    const size_t HW = 4;
+    const size_t HH = 4;
+    const size_t W  = HW * 2;
+    const size_t H  = HH * 2;
 
-    auto buf = CLBuff2D<int>::Create(this->context, CLFlags::RW, W, H, 0);
-    if (!buf || 0 != buf.Error())
-    {
-        return -1;
-    }
+    auto buf = CLBuff2D<int>::Create(this->context, CLFlags::RW, W, H);
+    ASSERT(buf);
 
     vector<int> src(W * H, 123);
-    if (!buf.Write(this->queue, 0, 0, W, H, src.data(), 0, 0, W * sizeof(int), {}))
+    if (!buf.Write(this->queue, 0, 0, W, H, src.data(), 0, 0, W * sizeof(src[0]), {}))
     {
         return -1;
     }
     buf.Wait();
 
-    const size_t HW = W / 2;
-    const size_t HH = H / 2;
-
-    src.clear();
-    src.resize(HW * HH, 321);
-    if (!buf.Write(this->queue, HW, HH, HW, HH, src.data(), 0, 0, HW * sizeof(int), {}))
+    src = vector<int>(HW * HH, 321);
+    if (!buf.Write(this->queue, HW, HH, HW, HH, src.data(), 0, 0, HW * sizeof(src[0]), {}))
     {
         return -1;
     }
     buf.Wait();
 
     vector<int> dst(W * H, 0);
-    if (!buf.Read(this->queue, 0, 0, HW, HH, &dst[0], 0, 0, W * sizeof(int), {}))
+    if (!buf.Read(this->queue, 0, 0, H, W, &dst[0], 0, 0, W * sizeof(dst[0]), {}))
     {
         return -1;
     }
@@ -218,36 +215,7 @@ int Test::Buff2DReadWrite()
     {
         for (size_t j = 0; j < W; j++)
         {
-            auto d = dst[i * W + j];
-
-            if (i < HH && j < HW)
-            {
-                if (123 != d)
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                if (0 != d)
-                {
-                    return false;
-                }
-            }
-        }
-    }
-
-    if (!buf.Read(this->queue, HW, 0, HW, HH, &dst[0], 10, 10, W * sizeof(int), {}))
-    {
-        return -1;
-    }
-    buf.Wait();
-
-    for (size_t i = 0; i < HH; i++)
-    {
-        for (size_t j = 0; j < HW; j++)
-        {
-            if (321 != dst[i * W + j])
+            if (dst[i * W + j] != ((i < HH || j < HW) ? 123 : 321))
             {
                 return -1;
             }
@@ -365,10 +333,7 @@ int Test::ImageReadWrite()
     const uint32_t h = 100;
 
     auto img = CLImage::Create(this->context, CLFlags::RW, CLImgFmt(CL_RGBA, CL_UNSIGNED_INT8), CLImgDsc(w, h));
-    if (!img || img.Error())
-    {
-        return -1;
-    }
+    ASSERT(img);
 
     vector<uint32_t> pix(w * h, 0xFFFEFDFC);
     img.Write(this->queue, { 0, 0 }, { w, h }, pix.data(), 0, 0, {});

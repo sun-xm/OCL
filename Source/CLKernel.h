@@ -191,6 +191,12 @@ protected:
         return CL_SUCCESS == this->err;
     }
 
+    template<typename T>
+    bool SetArgs(cl_uint index, const CLBuff2D<T>& buffer)
+    {
+        return this->SetArgs(index, (const CLBuffer<T>&)buffer);
+    }
+
     template<typename T, typename... Tx>
     bool SetArgs(cl_uint index, const CLBuffer<T>& buffer, const Tx&... args)
     {

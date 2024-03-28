@@ -305,56 +305,45 @@ protected:
 };
 
 template<typename T>
-class CLBuff2D
+class CLBuff2D : public CLBuffer<T>
 {
 public:
-    CLBuff2D() : mem(nullptr), err(0), pitch(0), width(0), height(0)
+    CLBuff2D() : CLBuffer(), pitch(0), width(0), height(0)
     {
     }
-    CLBuff2D(cl_mem mem, size_t width, size_t height, size_t pitch, cl_int error) : CLBuff2D()
+    CLBuff2D(cl_mem mem, size_t length, size_t width, size_t height, size_t pitch, cl_int error) : CLBuffer(mem, length, error)
     {
-        if (CL_SUCCESS == error && mem && width && height && pitch)
+        if (CL_SUCCESS == this->err)
         {
-            error = clRetainMemObject(mem);
-            if (CL_SUCCESS == error)
-            {
-                this->mem    = mem;
-                this->pitch  = pitch;
-                this->width  = width;
-                this->height = height;
-            }
+            this->pitch  = pitch;
+            this->width  = width;
+            this->height = height;
         }
-        this->err = error;
+        else
+        {
+            this->pitch  = 0;
+            this->width  = 0;
+            this->height = 0;
+        }
     }
     CLBuff2D(CLBuff2D&& other) : CLBuff2D()
     {
         *this = std::move(other);
     }
     CLBuff2D(const CLBuff2D&) = delete;
-    virtual ~CLBuff2D()
-    {
-        if (this->mem)
-        {
-            clReleaseMemObject(this->mem);
-        }
-    }
 
     CLBuff2D& operator=(CLBuff2D&& other)
     {
-        auto mem    = this->mem;
-        auto err    = this->err;
+        *(CLBuffer*)this = std::move((CLBuffer&)other);
+
         auto pitch  = this->pitch;
         auto width  = this->width;
         auto height = this->height;
 
-        this->mem    = other.mem;
-        this->err    = other.err;
         this->pitch  = other.pitch;
         this->width  = other.width;
         this->height = other.height;
 
-        other.mem    = mem;
-        other.err    = err;
         other.pitch  = pitch;
         other.width  = width;
         other.height = height;
@@ -365,7 +354,7 @@ public:
     }
     CLBuff2D& operator=(const CLBuff2D&) = delete;
 
-    bool Read(cl_command_queue queue, size_t x, size_t y, size_t width, size_t hight, T* host, size_t hostX, size_t hostY, size_t pitch, const std::vector<cl_event>& waits)
+    bool Read(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, T* host, size_t hostX, size_t hostY, size_t pitch, const std::vector<cl_event>& waits)
     {
         std::vector<cl_event> events;
         for (auto& e : waits)
@@ -423,11 +412,6 @@ public:
         return true;
     }
 
-    void Wait() const
-    {
-        this->err = this->evt.Wait();
-    }
-
     size_t Width() const
     {
         return this->width;
@@ -443,27 +427,7 @@ public:
         return this->pitch;
     }
 
-    cl_int Error() const
-    {
-        return this->err;
-    }
-
-    operator cl_event() const
-    {
-        return this->evt;
-    }
-
-    operator cl_mem() const
-    {
-        return this->mem;
-    }
-
-    operator bool() const
-    {
-        return !!this->mem;
-    }
-
-    static CLBuff2D Create(cl_context context, uint32_t flags, size_t width, size_t height, size_t pitch)
+    static CLBuff2D Create(cl_context context, uint32_t flags, size_t width, size_t height, size_t pitch = 0)
     {
         cl_mem_flags mflags;
         switch (flags)
@@ -500,19 +464,15 @@ public:
         auto buffer = clCreateBuffer(context, mflags, pitch * height, nullptr, &error);
         if (CL_SUCCESS != error)
         {
-            return CLBuff2D(0, 0, 0, 0, error);
+            return CLBuff2D(0, 0, 0, 0, 0, error);
         }
 
         ONCLEANUP(buffer, [buffer]{ if (buffer) clReleaseMemObject(buffer); });
-        return CLBuff2D(buffer, width, height, pitch, error);
+        return CLBuff2D(buffer, pitch * height, width, height, pitch, error);
     }
 
 protected:
-    cl_mem mem;
     size_t pitch;
     size_t width;
     size_t height;
-
-    mutable cl_int  err;
-    mutable CLEvent evt;
 };
