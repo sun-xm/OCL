@@ -166,7 +166,7 @@ public:
     template<typename T>
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, size_t& pitch, size_t& slice)
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Map<T>(queue, flags, pitch, slice, {});
     }
     template<typename T>
@@ -178,7 +178,7 @@ public:
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, const std::vector<size_t>& origin, const std::vector<size_t>& region,
                     size_t& pitch, size_t& slice)
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Map<T>(queue, flags, origin, region, pitch, slice, {});
     }
     template<typename T>
@@ -225,7 +225,7 @@ public:
 
     bool Copy(cl_command_queue queue, const CLImage& source)
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Copy(queue, source, {});
     }
     bool Copy(cl_command_queue queue, const CLImage& source, const std::vector<cl_event>& waits)
@@ -238,7 +238,7 @@ public:
     bool Copy(cl_command_queue queue, const CLImage& source, const std::vector<size_t>& srcorg, const std::vector<size_t>& dstorg,
               const std::vector<size_t>& region)
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Copy(queue, source, srcorg, dstorg, region, {});
     }
     bool Copy(cl_command_queue queue, const CLImage& source, const std::vector<size_t>& srcorg, const std::vector<size_t>& dstorg,
@@ -268,7 +268,7 @@ public:
 
     bool Read(cl_command_queue queue, void* host) const
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Read(queue, host, {});
     }
     bool Read(cl_command_queue queue, void* host, const std::vector<cl_event>& waits) const
@@ -278,7 +278,7 @@ public:
     bool Read(cl_command_queue queue, const std::vector<size_t>& origin, const std::vector<size_t>& region,
               void* host, size_t pitch, size_t slice) const
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Read(queue, origin, region, host, pitch, slice, {});
     }
     bool Read(cl_command_queue queue, const std::vector<size_t>& origin, const std::vector<size_t>& region,
@@ -321,7 +321,7 @@ public:
 
     bool Write(cl_command_queue queue, void* host)
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Write(queue, host, {});
     }
     bool Write(cl_command_queue queue, void* host, const std::vector<cl_event>& waits)
@@ -331,7 +331,7 @@ public:
     bool Write(cl_command_queue queue, const std::vector<size_t>& origin, const std::vector<size_t>& region,
                void* host, size_t pitch, size_t slice)
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Write(queue, origin, region, host, pitch, slice, {});
     }
     bool Write(cl_command_queue queue, const std::vector<size_t>& origin, const std::vector<size_t>& region,

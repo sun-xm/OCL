@@ -39,7 +39,7 @@ public:
 
     bool Execute(cl_command_queue queue) const
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Execute(queue, {});
     }
     bool Execute(cl_command_queue queue, const std::vector<cl_event>& waits) const

@@ -62,12 +62,12 @@ public:
 
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags)
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Map(queue, flags, {});
     }
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, size_t offset, size_t length)
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Map(queue, flags, offset, length, {});
     }
     CLMemMap<T> Map(cl_command_queue queue, uint32_t flags, const std::vector<cl_event>& waits)
@@ -120,7 +120,7 @@ public:
     }
     bool Copy(cl_command_queue queue, const CLBuffer& source, size_t srcoff, size_t dstoff, size_t length)
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Copy(queue, source, srcoff, dstoff, length, {});
     }
     bool Copy(cl_command_queue queue, const CLBuffer& source, const std::vector<cl_event>& waits)
@@ -157,7 +157,7 @@ public:
     }
     bool Read(cl_command_queue queue, size_t offset, size_t length, T* host) const
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Read(queue, offset, length, host, {});
     }
     bool Read(cl_command_queue queue, T* host, const std::vector<cl_event>& waits) const
@@ -194,7 +194,7 @@ public:
     }
     bool Write(cl_command_queue queue, size_t offset, size_t length, const T* host)
     {
-        ONCLEANUP(wait, [this]{ this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Write(queue, offset, length, host, {});
     }
     bool Write(cl_command_queue queue, const T* host, const std::vector<cl_event>& waits)
@@ -384,6 +384,12 @@ public:
         return true;
     }
 
+    bool Write(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, const T* host, size_t hostX, size_t hostY, size_t pitch)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Write(queue, x, y, width, height, host, hostX, hostY, pitch, {});
+    }
+    // Do not queue up more than 1 consecutive async rect write together on Intel platform. It's not working.
     bool Write(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, const T* host, size_t hostX, size_t hostY, size_t pitch, const std::vector<cl_event>& waits)
     {
         std::vector<cl_event> events;
