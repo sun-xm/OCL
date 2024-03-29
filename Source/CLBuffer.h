@@ -355,6 +355,51 @@ public:
     }
     CLBuff2D& operator=(const CLBuff2D&) = delete;
 
+    bool Copy(cl_command_queue queue, const CLBuff2D& source)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Copy(queue, source, {});
+    }
+    bool Copy(cl_command_queue queue, const CLBuff2D& source, const std::vector<cl_event>& waits)
+    {
+        size_t w = this->width  < source.width  ? this->width  : source.width;
+        size_t h = this->height < source.height ? this->height : source.height;
+        return this->Copy(queue, source, 0, 0, w, h, 0, 0, waits);
+    }
+    bool Copy(cl_command_queue queue, const CLBuff2D& source, size_t srcx, size_t srcy, size_t width, size_t height, size_t dstx, size_t dsty)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Copy(queue, source, srcx, srcy, width, height, dstx, dsty, {});
+    }
+    bool Copy(cl_command_queue queue, const CLBuff2D& source, size_t srcx, size_t srcy, size_t width, size_t height, size_t dstx, size_t dsty, const std::vector<cl_event>& waits)
+    {
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        size_t srcorg[3] = { srcx * sizeof(T), srcy, 0 };
+        size_t dstorg[3] = { dstx * sizeof(T), dsty, 0};
+        size_t region[3] = { width * sizeof(T), height, 1 };
+
+        cl_event event;
+        this->err = clEnqueueCopyBufferRect(queue, source, this->mem, srcorg, dstorg, region, source.pitch, 0, this->pitch, 0,
+                                            (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
+        return true;
+    }
+
     bool Read(cl_command_queue queue, T* host)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });

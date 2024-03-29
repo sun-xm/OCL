@@ -213,6 +213,66 @@ int Test::BufferReadWrite()
 
 int Test::Buff2DMapCopy()
 {
+    const size_t HW = 4;
+    const size_t HH = 4;
+    const size_t W  = HW * 2;
+    const size_t H  = HH * 2;
+
+    auto src = CLBuff2D<int>::Create(this->context, CLFlags::RW, W, H);
+    ASSERT(src);
+
+    auto map = src.Map(this->queue, CLFlags::WO);
+    if (!map)
+    {
+        return -1;
+    }
+
+    for (size_t i = 0; i < H; i++)
+    {
+        auto ptr = (int*)((char*)&map[0] + i * src.Pitch());
+
+        for (size_t j = 0; j < W; j++)
+        {
+            if (i < HH || j < HW)
+            {
+                ptr[j] = 123;
+            }
+            else
+            {
+                ptr[j] = 321;
+            }
+        }
+    }
+    map.Unmap({});
+
+    auto dst = CLBuff2D<int>::Create(this->context, CLFlags::RW, HW, HH);
+    ASSERT(dst);
+
+    if (!dst.Copy(this->queue, src, HW, HH, HW, HH, 0, 0, { map }))
+    {
+        return -1;
+    }
+
+    map = dst.Map(this->queue, CLFlags::RO, { dst });
+    if (!map)
+    {
+        return -1;
+    }
+
+    dst.Wait();
+    for (size_t i = 0; i < HH; i++)
+    {
+        auto ptr = (int*)((char*)&map[0] + i * dst.Pitch());
+
+        for (size_t j = 0; j < HW; j++)
+        {
+            if (321 != ptr[j])
+            {
+                return -1;
+            }
+        }
+    }
+
     return 0;
 }
 
