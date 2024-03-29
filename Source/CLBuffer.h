@@ -355,6 +355,20 @@ public:
     }
     CLBuff2D& operator=(const CLBuff2D&) = delete;
 
+    bool Read(cl_command_queue queue, T* host)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Read(queue, host, {});
+    }
+    bool Read(cl_command_queue queue, T* host, const std::vector<cl_event>& waits)
+    {
+        return this->Read(queue, 0, 0, this->width, this->height, host, 0, 0, this->width * sizeof(T), waits);
+    }
+    bool Read(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, T* host, size_t hostX, size_t hostY, size_t pitch)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Read(queue, x, y, width, height, host, hostX, hostY, pitch, {});
+    }
     bool Read(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, T* host, size_t hostX, size_t hostY, size_t pitch, const std::vector<cl_event>& waits)
     {
         std::vector<cl_event> events;
@@ -384,12 +398,21 @@ public:
         return true;
     }
 
+    // Do not queue up more than 1 consecutive async rect write together on Intel platform. It's not working.
+    bool Write(cl_command_queue queue, const T* host)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Write(queue, host, {});
+    }
+    bool Write(cl_command_queue queue, const T* host, const std::vector<cl_event>& waits)
+    {
+        return this->Write(queue, 0, 0, this->width, this->height, host, 0, 0, this->width * sizeof(T), waits);
+    }
     bool Write(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, const T* host, size_t hostX, size_t hostY, size_t pitch)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Write(queue, x, y, width, height, host, hostX, hostY, pitch, {});
     }
-    // Do not queue up more than 1 consecutive async rect write together on Intel platform. It's not working.
     bool Write(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, const T* host, size_t hostX, size_t hostY, size_t pitch, const std::vector<cl_event>& waits)
     {
         std::vector<cl_event> events;
