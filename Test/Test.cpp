@@ -1,10 +1,47 @@
 #include "Test.h"
 #include <fstream>
 #include <random>
+#include <mutex>
 
 #define ASSERT(o) if (!o || 0 != o.Error()) return -1
 
 using namespace std;
+
+mutex lock;
+void __stdcall callback(cl_event, cl_int status, void* data)
+{
+    lock_guard<mutex> guard(::lock);
+
+    cout << (char*)data;
+    switch (status)
+    {
+        case CL_COMPLETE:
+        {
+            cout << " complete";
+            break;
+        }
+
+        case CL_RUNNING:
+        {
+            cout << " running";
+            break;
+        }
+
+        case CL_SUBMITTED:
+        {
+            cout << " submitted";
+            break;
+        }
+
+        case CL_QUEUED:
+        {
+            cout << " queued";
+            break;
+        }
+    }
+
+    cout << endl;
+}
 
 Test::Test()
 {
@@ -143,11 +180,15 @@ int Test::BufferReadWrite()
     }
 
     auto buf = CLBuffer<int>::Create(this->context, CLFlags::RW, length);
-    if (!buf)
+    ASSERT(buf);
+
+    if (!buf.Write(this->queue, src.data()))
     {
         return -1;
     }
 
+    src.clear();
+    src.resize(length, 123);
     if (!buf.Write(this->queue, src.data()))
     {
         return -1;
@@ -177,6 +218,11 @@ int Test::Buff2DMapCopy()
 
 int Test::Buff2DReadWrite()
 {
+    // Correct event completion order should be:
+    // write0: complete
+    // write1: complete
+    // read: complete
+    // Unfortunately on Intel platform it not the case. So be careful to use asyn rect read/write method on Intel GPU.
     if (!*this)
     {
         return -1;
@@ -195,20 +241,22 @@ int Test::Buff2DReadWrite()
     {
         return -1;
     }
-    buf.Wait();
+    clSetEventCallback(buf.Event(), CL_COMPLETE, callback, "write0: ");
 
     src = vector<int>(HW * HH, 321);
-    if (!buf.Write(this->queue, HW, HH, HW, HH, src.data(), 0, 0, HW * sizeof(src[0]), {}))
+    if (!buf.Write(this->queue, HW, HH, HW, HH, src.data(), 0, 0, HW * sizeof(src[0]), { buf }))
     {
         return -1;
     }
-    buf.Wait();
+    clSetEventCallback(buf.Event(), CL_COMPLETE, callback, "write1: ");
 
     vector<int> dst(W * H, 0);
-    if (!buf.Read(this->queue, 0, 0, H, W, &dst[0], 0, 0, W * sizeof(dst[0]), {}))
+    if (!buf.Read(this->queue, 0, 0, H, W, &dst[0], 0, 0, W * sizeof(dst[0]), { buf }))
     {
         return -1;
     }
+    clSetEventCallback(buf.Event(), CL_COMPLETE, callback, "read: ");
+
     buf.Wait();
 
     for (size_t i = 0; i < H; i++)

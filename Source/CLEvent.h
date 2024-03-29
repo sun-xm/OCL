@@ -62,6 +62,13 @@ public:
         return this->event ? clWaitForEvents(1, &this->event) : 0;
     }
 
+    cl_int Status() const
+    {
+        cl_int status;
+        clGetEventInfo(this->event, CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(status), &status, nullptr);
+        return status;
+    }
+
     operator cl_event() const
     {
         return this->event;

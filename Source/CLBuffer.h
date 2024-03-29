@@ -244,6 +244,7 @@ public:
     {
         return this->evt;
     }
+
     operator cl_event() const
     {
         return (cl_event)this->evt;
