@@ -297,21 +297,21 @@ int Test::Buff2DReadWrite()
     ASSERT(buf);
 
     vector<int> src(W * H, 123);
-    if (!buf.Write(this->queue, 0, 0, W, H, src.data(), 0, 0, W * sizeof(src[0]), {}))
+    if (!buf.Write(this->queue, 0, 0, W, H, src.data(), 0, 0, 0, {}))
     {
         return -1;
     }
     clSetEventCallback(buf.Event(), CL_COMPLETE, callback, "write0: ");
 
     src = vector<int>(HW * HH, 321);
-    if (!buf.Write(this->queue, HW, HH, HW, HH, src.data(), 0, 0, HW * sizeof(src[0]), { buf }))
+    if (!buf.Write(this->queue, HW, HH, HW, HH, src.data(), 0, 0, 0, { buf }))
     {
         return -1;
     }
     clSetEventCallback(buf.Event(), CL_COMPLETE, callback, "write1: ");
 
     vector<int> dst(W * H, 0);
-    if (!buf.Read(this->queue, 0, 0, H, W, &dst[0], 0, 0, W * sizeof(dst[0]), { buf }))
+    if (!buf.Read(this->queue, 0, 0, W, H, &dst[0], 0, 0, 0, { buf }))
     {
         return -1;
     }
@@ -327,6 +327,124 @@ int Test::Buff2DReadWrite()
             {
                 return -1;
             }
+        }
+    }
+
+    return 0;
+}
+
+int Test::Buff3DMapCopy()
+{
+    const size_t HW = 4;
+    const size_t HH = 4;
+    const size_t HD = 4;
+    const size_t W  = HW * 2;
+    const size_t H  = HH * 2;
+    const size_t D  = HD * 2;
+
+    auto src = CLBuff3D<int>::Create(this->context, CLFlags::RW, W, H, D);
+    ASSERT(src);
+
+    auto map = src.Map(this->queue, CLFlags::WO);
+    if (!map)
+    {
+        return -1;
+    }
+
+    for (size_t i = 0; i < D; i++)
+    {
+        auto slc = (char*)&map[0] + i * src.Slice();
+
+        for (size_t j = 0; j < H; j++)
+        {
+            auto ptr = (int*)(slc + j * src.Pitch());
+
+            for (size_t k = 0; k < W; k++)
+            {
+                if (i < HD && j < HH && k < HW)
+                {
+                    ptr[k] = 123;
+                }
+                else
+                {
+                    ptr[k] = 321;
+                }
+            }
+        }
+    }
+    map.Unmap({});
+
+    auto dst = CLBuff3D<int>::Create(this->context, CLFlags::RW, HW, HH, HD);
+    ASSERT(dst);
+
+    if (!dst.Copy(this->queue, src, HW, HH, HD, HW, HH, HD, 0, 0, 0, { map }))
+    {
+        return -1;
+    }
+
+    map = dst.Map(this->queue, CLFlags::RO, { dst });
+    if (!map)
+    {
+        return -1;
+    }
+    dst.Wait();
+
+    for (size_t i = 0; i < HD; i++)
+    {
+        auto slc = (char*)&map[0] + i * dst.Slice();
+
+        for (size_t j = 0; j < HH; j++)
+        {
+            auto ptr = (int*)(slc + j * dst.Pitch());
+
+            for (size_t k = 0; k < HW; k++)
+            {
+                if (321 != ptr[i])
+                {
+                    return -1;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+int Test::Buff3DReadWrite()
+{
+    if (!*this)
+    {
+        return -1;
+    }
+
+    const size_t HW = 4;
+    const size_t HH = 4;
+    const size_t HD = 4;
+    const size_t W  = HW * 2;
+    const size_t H  = HH * 2;
+    const size_t D  = HD * 2;
+
+    auto buf = CLBuff3D<int>::Create(this->context, CLFlags::RW, W, H, D);
+    ASSERT(buf);
+
+    vector<int> src(W * H * D, 123);
+    if (!buf.Write(this->queue, 0, 0, 0, W, H, D, src.data(), 0, 0, 0, 0, 0, {}))
+    {
+        return -1;
+    }
+
+    vector<int> dst(HW * HH * HD, 0);
+    if (!buf.Read(this->queue, HW, HH, HD, HW, HH, HD, &dst[0], 0, 0, 0, 0, 0, { buf }))
+    {
+        return -1;
+    }
+    buf.Wait();
+
+    for (auto& d : dst)
+    {
+        if (123 != d)
+        {
+            return -1;
         }
     }
 

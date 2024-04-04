@@ -349,8 +349,6 @@ public:
         other.width  = width;
         other.height = height;
 
-        this->evt = std::move(other.evt);
-
         return *this;
     }
     CLBuff2D& operator=(const CLBuff2D&) = delete;
@@ -366,12 +364,12 @@ public:
         size_t h = this->height < source.height ? this->height : source.height;
         return this->Copy(queue, source, 0, 0, w, h, 0, 0, waits);
     }
-    bool Copy(cl_command_queue queue, const CLBuff2D& source, size_t srcx, size_t srcy, size_t width, size_t height, size_t dstx, size_t dsty)
+    bool Copy(cl_command_queue queue, const CLBuff2D& source, size_t srcX, size_t srcY, size_t width, size_t height, size_t dstX, size_t dstY)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
-        return this->Copy(queue, source, srcx, srcy, width, height, dstx, dsty, {});
+        return this->Copy(queue, source, srcX, srcY, width, height, dstX, dstY, {});
     }
-    bool Copy(cl_command_queue queue, const CLBuff2D& source, size_t srcx, size_t srcy, size_t width, size_t height, size_t dstx, size_t dsty, const std::vector<cl_event>& waits)
+    bool Copy(cl_command_queue queue, const CLBuff2D& source, size_t srcX, size_t srcY, size_t width, size_t height, size_t dstX, size_t dstY, const std::vector<cl_event>& waits)
     {
         std::vector<cl_event> events;
         for (auto& e : waits)
@@ -382,8 +380,8 @@ public:
             }
         }
 
-        size_t srcorg[3] = { srcx * sizeof(T), srcy, 0 };
-        size_t dstorg[3] = { dstx * sizeof(T), dsty, 0};
+        size_t srcorg[3] = { srcX * sizeof(T), srcY, 0 };
+        size_t dstorg[3] = { dstX * sizeof(T), dstY, 0};
         size_t region[3] = { width * sizeof(T), height, 1 };
 
         cl_event event;
@@ -407,7 +405,7 @@ public:
     }
     bool Read(cl_command_queue queue, T* host, const std::vector<cl_event>& waits)
     {
-        return this->Read(queue, 0, 0, this->width, this->height, host, 0, 0, this->width * sizeof(T), waits);
+        return this->Read(queue, 0, 0, this->width, this->height, host, 0, 0, 0, waits);
     }
     bool Read(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, T* host, size_t hostX, size_t hostY, size_t pitch)
     {
@@ -428,6 +426,11 @@ public:
         size_t borigin[3] = { x * sizeof(T), y, 0 };
         size_t horigin[3] = { hostX * sizeof(T), hostY,  0 };
         size_t region[3]  = { width * sizeof(T), height, 1 };
+
+        if (0 == pitch)
+        {
+            pitch = width * sizeof(T);
+        }
 
         cl_event event;
         this->err = clEnqueueReadBufferRect(queue, this->mem, CL_FALSE, borigin, horigin, region, this->pitch, 0, pitch, 0, host,
@@ -451,7 +454,7 @@ public:
     }
     bool Write(cl_command_queue queue, const T* host, const std::vector<cl_event>& waits)
     {
-        return this->Write(queue, 0, 0, this->width, this->height, host, 0, 0, this->width * sizeof(T), waits);
+        return this->Write(queue, 0, 0, this->width, this->height, host, 0, 0, 0, waits);
     }
     bool Write(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, const T* host, size_t hostX, size_t hostY, size_t pitch)
     {
@@ -472,6 +475,11 @@ public:
         size_t borigin[3] = { x * sizeof(T), y, 0 };
         size_t horigin[3] = { hostX * sizeof(T), hostY,  0 };
         size_t region[3]  = { width * sizeof(T), height, 1 };
+
+        if (0 == pitch)
+        {
+            pitch = width * sizeof(T);
+        }
 
         cl_event event;
         this->err = clEnqueueWriteBufferRect(queue, this->mem, CL_FALSE, borigin, horigin, region, this->pitch, 0, pitch, 0, host,
@@ -550,4 +558,268 @@ protected:
     size_t pitch;
     size_t width;
     size_t height;
+};
+
+template<typename T>
+class CLBuff3D : public CLBuff2D<T>
+{
+public:
+    CLBuff3D() : CLBuff2D(), depth(0), slice(0)
+    {
+    }
+    CLBuff3D(cl_mem mem, size_t length, size_t width, size_t height, size_t depth, size_t pitch, size_t slice, cl_int error)
+      : CLBuff2D(mem, length, width, height, pitch, error)
+    {
+        if (CL_SUCCESS == this->err)
+        {
+            this->depth = depth;
+            this->slice = slice;
+        }
+        else
+        {
+            this->depth = 0;
+            this->slice = 0;
+        }
+    }
+    CLBuff3D(CLBuff3D&& other) : CLBuff3D()
+    {
+        *this = std::move(other);
+    }
+    CLBuff3D(const CLBuff3D&) = delete;
+
+    CLBuff3D& operator=(CLBuff3D&& other)
+    {
+        *(CLBuff2D*)this = std::move((CLBuff2D&)other);
+
+        auto depth = this->depth;
+        auto slice = this->slice;
+
+        this->depth = other.depth;
+        this->slice = other.slice;
+
+        other.depth = depth;
+        other.slice = slice;
+    }
+    CLBuff3D& operator=(const CLBuff3D&) = delete;
+
+    bool Copy(cl_command_queue queue, const CLBuff3D& source)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Copy(queue, source, {});
+    }
+    bool Cpoy(cl_command_queue queue, const CLBuff3D& source, const std::vector<cl_event>& waits)
+    {
+        size_t w = this->width  < source.width  ? this->width  : source.width;
+        size_t h = this->height < source.height ? this->height : source.height;
+        size_t d = this->depth  < source.depth  ? this->depth  : source.depth;
+        return this->Copy(queue, source, 0, 0, 0, w, h, d, 0, 0, 0, waits);
+    }
+    bool Copy(cl_command_queue queue, const CLBuff3D& source, size_t srcX, size_t srcY, size_t srcZ, size_t width, size_t height, size_t depth,
+              size_t dstX, size_t dstY, size_t dstZ)
+    {
+        ONCLENAUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Copy(queue, source, srcX, srcY, srcZ, width, height, depth, dstX, dstY, dstZ, {});
+    }
+    bool Copy(cl_command_queue queue, const CLBuff3D& source, size_t srcX, size_t srcY, size_t srcZ, size_t width, size_t height, size_t depth,
+              size_t dstX, size_t dstY, size_t dstZ, const std::vector<cl_event>& waits)
+    {
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        size_t srcorg[3] = { srcX * sizeof(T), srcY, srcZ };
+        size_t dstorg[3] = { dstX * sizeof(T), dstY, dstZ };
+        size_t region[3] = { width * sizeof(T), height, depth };
+
+        cl_event event;
+        this->err = clEnqueueCopyBufferRect(queue, source, this->mem, srcorg, dstorg, region, source.pitch, source.slice, this->pitch, this->slice,
+                                            (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
+        return true;
+    }
+
+    bool Read(cl_command_queue queue, T* host)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Read(queue, host, {});
+    }
+    bool Read(cl_command_queue queue, T* host, const std::vector<cl_event>& waits)
+    {
+        return this->Read(queue, 0, 0, 0, this->width, this->height, this->depth, host, 0, 0, 0, 0, 0, {});
+    }
+    bool Read(cl_command_queue queue, size_t x, size_t y, size_t z, size_t width, size_t height, size_t depth, T* host,
+              size_t hostX, size_t hostY, size_t hostZ, size_t pitch, size_t slice)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Read(queue, x, y, z, width, height, depth, host, hostX, hostY, hostZ, pitch, slice, {});
+    }
+    bool Read(cl_command_queue queue, size_t x, size_t y, size_t z, size_t width, size_t height, size_t depth, T* host,
+              size_t hostX, size_t hostY, size_t hostZ, size_t pitch, size_t slice, const std::vector<cl_event>& waits)
+    {
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        size_t borigin[3] = { x * sizeof(T), y, z };
+        size_t horigin[3] = { hostX * sizeof(T), hostY,  hostZ };
+        size_t region[3]  = { width * sizeof(T), height, depth };
+
+        if (0 == pitch)
+        {
+            pitch = width * sizeof(T);
+        }
+
+        if (0 == slice)
+        {
+            slice = height * pitch;
+        }
+
+        cl_event event;
+        this->err = clEnqueueReadBufferRect(queue, this->mem, CL_FALSE, borigin, horigin, region, this->pitch, this->slice, pitch, slice,
+                                            host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
+        return true;
+    }
+
+    bool Write(cl_command_queue queue, const T* host)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Write(queue, host, {});
+    }
+    bool Write(cl_command_queue queue, const T* host, const std::vector<cl_event>& waits)
+    {
+        return this->Write(queue, 0, 0, 0, this->width, this->height, this->depth, host, 0, 0, 0, 0, 0, waits);
+    }
+    bool Write(cl_command_queue queue, size_t x, size_t y, size_t z, size_t width, size_t height, size_t depth, const T* host,
+               size_t hostX, size_t hostY, size_t hostZ, size_t pitch, size_t slice)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Write(queue, x, y, z, width, height, depth, host, hostX, hostY, hostZ, pitch, slice, {});
+    }
+    bool Write(cl_command_queue queue, size_t x, size_t y, size_t z, size_t width, size_t height, size_t depth, const T* host,
+               size_t hostX, size_t hostY, size_t hostZ, size_t pitch, size_t slice, const std::vector<cl_event>& waits)
+    {
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        size_t borigin[3] = { x * sizeof(T), y, z };
+        size_t horigin[3] = { hostX * sizeof(T), hostY,  hostZ };
+        size_t region[3]  = { width * sizeof(T), height, depth };
+
+        if (0 == pitch)
+        {
+            pitch = width * sizeof(T);
+        }
+
+        if (0 == slice)
+        {
+            slice = height * pitch;
+        }
+
+        cl_event event;
+        this->err = clEnqueueWriteBufferRect(queue, this->mem, CL_FALSE, borigin, horigin, region, this->pitch, this->slice, pitch, slice,
+                                             host, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
+        return true;
+    }
+
+    size_t Depth() const
+    {
+        return this->depth;
+    }
+
+    size_t Slice() const
+    {
+        return this->slice;
+    }
+
+    static CLBuff3D Create(cl_context context, uint32_t flags, size_t width, size_t height, size_t depth, size_t pitch = 0, size_t slice = 0)
+    {
+        cl_mem_flags mflags;
+        switch (flags)
+        {
+            case CLFlags::RW:
+            {
+                mflags = CL_MEM_READ_WRITE;
+                break;
+            }
+
+            case CLFlags::RO:
+            {
+                mflags = CL_MEM_READ_ONLY;
+                break;
+            }
+
+            case CLFlags::WO:
+            {
+                mflags = CL_MEM_WRITE_ONLY;
+                break;
+            }
+
+            default:
+                throw std::runtime_error("Unsupported memory creation flag");
+        }
+
+        if (0 == pitch)
+        {
+            auto align = CLContext(context).Device().MemBaseAddrAlign();
+            pitch = (width * sizeof(T) + align - 1) / align * align;
+        }
+
+        if (0 == slice)
+        {
+            slice = pitch * height;
+        }
+
+        cl_int error;
+        auto buffer = clCreateBuffer(context, mflags, slice * depth, nullptr, &error);
+        if (CL_SUCCESS != error)
+        {
+            return CLBuff3D(0, 0, 0, 0, 0, 0, 0, error);
+        }
+
+        ONCLEANUP(buffer, [buffer]{ if(buffer) clReleaseMemObject(buffer); });
+        return CLBuff3D(buffer, slice * depth, width, height, depth, pitch, slice, error);
+    }
+
+protected:
+    size_t depth;
+    size_t slice;
 };
