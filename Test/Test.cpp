@@ -412,6 +412,7 @@ int Test::Buff3DMapCopy()
 
 int Test::Buff3DReadWrite()
 {
+    // This is not working on Intel platform. Seems clEnqueuWriteBufferRect() can hot handle wait list properly.
     if (!*this)
     {
         return -1;
@@ -433,18 +434,39 @@ int Test::Buff3DReadWrite()
         return -1;
     }
 
-    vector<int> dst(HW * HH * HD, 0);
-    if (!buf.Read(this->queue, HW, HH, HD, HW, HH, HD, &dst[0], 0, 0, 0, 0, 0, { buf }))
+    src.clear();
+    src.resize(HW * HH * HD, 321);
+    if (!buf.Write(this->queue, HW, HH, HD, HW, HH, HD, src.data(), 0, 0, 0, 0, 0, { buf }))
+    {
+        return -1;
+    }
+
+    vector<int> dst(W * H * D, 0);
+    if (!buf.Read(this->queue, 0, 0, 0, W, H, D, &dst[0], 0, 0, 0, 0, 0, { buf }))
     {
         return -1;
     }
     buf.Wait();
 
-    for (auto& d : dst)
+    for (size_t i = 0; i < D; i++)
     {
-        if (123 != d)
+        for (size_t j = 0; j < H; j++)
         {
-            return -1;
+            for (size_t k = 0; k < W; k++)
+            {
+                auto d = dst[i * H * W + j * W + k];
+                if (i < HD || j < HH || k < HW)
+                {
+                    if (123 != d)
+                    {
+                        return -1;
+                    }
+                }
+                else if (321 != d)
+                {
+                    return -1;
+                }
+            }
         }
     }
 

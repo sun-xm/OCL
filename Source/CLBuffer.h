@@ -446,7 +446,7 @@ public:
         return true;
     }
 
-    // Do not queue up more than 1 consecutive async rect write together on Intel platform. It's not working.
+    // Async write may not working on Intel platform. clEnqueueWriteBufferRect seems cannot handle wait list properly.
     bool Write(cl_command_queue queue, const T* host)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
@@ -705,6 +705,7 @@ public:
         return true;
     }
 
+    // Async write may not working on Intel platform. clEnqueueWriteBufferRect seems cannot handle wait list properly.
     bool Write(cl_command_queue queue, const T* host)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
