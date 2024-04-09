@@ -163,6 +163,17 @@ protected:
         this->err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
         return CL_SUCCESS == this->err;
     }
+    template<typename... Tx>
+    bool SetArgs(cl_uint index, const CLLocal& local, const Tx&... args)
+    {
+        this->err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        return this->SetArgs(index + 1, args...);
+    }
 
     bool SetArgs(cl_uint index, const CLImage& image)
     {
@@ -170,11 +181,11 @@ protected:
         this->err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
         return CL_SUCCESS == this->err;
     }
-
     template<typename... Tx>
-    bool SetArgs(cl_uint index, const CLLocal& local, const Tx&... args)
+    bool SetArgs(cl_uint index, const CLImage& image, const Tx&... args)
     {
-        this->err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
+        auto  mem = (cl_mem)image;
+        this->err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
         if (CL_SUCCESS != this->err)
         {
             return false;
@@ -190,13 +201,6 @@ protected:
         this->err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
         return CL_SUCCESS == this->err;
     }
-
-    template<typename T>
-    bool SetArgs(cl_uint index, const CLBuff2D<T>& buffer)
-    {
-        return this->SetArgs(index, (const CLBuffer<T>&)buffer);
-    }
-
     template<typename T, typename... Tx>
     bool SetArgs(cl_uint index, const CLBuffer<T>& buffer, const Tx&... args)
     {
@@ -208,6 +212,28 @@ protected:
         }
 
         return this->SetArgs(index + 1, args...);
+    }
+
+    template<typename T>
+    bool SetArgs(cl_uint index, const CLBuff2D<T>& buffer)
+    {
+        return this->SetArgs(index, (const CLBuffer<T>&)buffer);
+    }
+    template<typename T, typename... Tx>
+    bool SetArgs(cl_uint index, const CLBuff2D<T>& buffer, const Tx&... args)
+    {
+        return this->SetArgs(index, (const CLBuffer<T>&)buffer, args...);
+    }
+
+    template<typename T>
+    bool SetArgs(cl_uint index, const CLBuff3D<T>& buffer)
+    {
+        return this->SetArgs(index, (const CLBuffer<T>&)buffer);
+    }
+    template<typename T, typename... Tx>
+    bool SetArgs(cl_uint index, const CLBuff3D<T>& buffer, const Tx&... args)
+    {
+        return this->SetArgs(index, (const CLBuffer<T>&)buffer, args...);
     }
 
     template<typename T0>
