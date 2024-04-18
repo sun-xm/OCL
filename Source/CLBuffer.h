@@ -398,21 +398,21 @@ public:
         return true;
     }
 
-    bool Read(cl_command_queue queue, T* host)
+    bool Read(cl_command_queue queue, T* host) const
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Read(queue, host, {});
     }
-    bool Read(cl_command_queue queue, T* host, const std::vector<cl_event>& waits)
+    bool Read(cl_command_queue queue, T* host, const std::vector<cl_event>& waits) const
     {
         return this->Read(queue, 0, 0, this->width, this->height, host, 0, 0, 0, waits);
     }
-    bool Read(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, T* host, size_t hostX, size_t hostY, size_t pitch)
+    bool Read(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, T* host, size_t hostX, size_t hostY, size_t pitch) const
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Read(queue, x, y, width, height, host, hostX, hostY, pitch, {});
     }
-    bool Read(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, T* host, size_t hostX, size_t hostY, size_t pitch, const std::vector<cl_event>& waits)
+    bool Read(cl_command_queue queue, size_t x, size_t y, size_t width, size_t height, T* host, size_t hostX, size_t hostY, size_t pitch, const std::vector<cl_event>& waits) const
     {
         std::vector<cl_event> events;
         for (auto& e : waits)
@@ -652,23 +652,23 @@ public:
         return true;
     }
 
-    bool Read(cl_command_queue queue, T* host)
+    bool Read(cl_command_queue queue, T* host) const
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Read(queue, host, {});
     }
-    bool Read(cl_command_queue queue, T* host, const std::vector<cl_event>& waits)
+    bool Read(cl_command_queue queue, T* host, const std::vector<cl_event>& waits) const
     {
         return this->Read(queue, 0, 0, 0, this->width, this->height, this->depth, host, 0, 0, 0, 0, 0, {});
     }
     bool Read(cl_command_queue queue, size_t x, size_t y, size_t z, size_t width, size_t height, size_t depth, T* host,
-              size_t hostX, size_t hostY, size_t hostZ, size_t pitch, size_t slice)
+              size_t hostX, size_t hostY, size_t hostZ, size_t pitch, size_t slice) const
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Read(queue, x, y, z, width, height, depth, host, hostX, hostY, hostZ, pitch, slice, {});
     }
     bool Read(cl_command_queue queue, size_t x, size_t y, size_t z, size_t width, size_t height, size_t depth, T* host,
-              size_t hostX, size_t hostY, size_t hostZ, size_t pitch, size_t slice, const std::vector<cl_event>& waits)
+              size_t hostX, size_t hostY, size_t hostZ, size_t pitch, size_t slice, const std::vector<cl_event>& waits) const
     {
         std::vector<cl_event> events;
         for (auto& e : waits)
