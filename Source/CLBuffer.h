@@ -599,6 +599,8 @@ public:
 
         other.depth = depth;
         other.slice = slice;
+
+        return *this;
     }
     CLBuff3D& operator=(const CLBuff3D&) = delete;
 
