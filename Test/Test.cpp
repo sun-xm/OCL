@@ -110,6 +110,163 @@ int Test::ContextDevice()
     return 0;
 }
 
+int Test::CLBufMapCopy()
+{
+    if (!*this)
+    {
+        return -1;
+    }
+
+    const size_t width  = 5;
+    const size_t height = 5;
+    const size_t depth  = 4;
+    const size_t length = width * height * depth;
+
+    // copy 1d to 1d
+    auto src = CLBuf<int>::Create(this->context, CLFlags::RO, length);
+    ASSERT(src);
+    {
+        auto map = src.Map(this->queue, CLFlags::WO);
+        if (!map)
+        {
+            return -1;
+        }
+
+        for (size_t i = 0; i < src.Length(); i++)
+        {
+            map[i] = (int)i;
+        }
+    }
+
+    auto dst = CLBuf<int>::Create(this->context, CLFlags::WO, length);
+    ASSERT(dst);
+
+    if (dst.Copy(this->queue, src))
+    {
+        auto map = src.Map(this->queue, CLFlags::WO, length / 4, length / 2);
+        if (!map)
+        {
+            return -1;
+        }
+
+        for (size_t i = 0; i < length / 2; i++)
+        {
+            map[i] = 555;
+        }
+    }
+    else
+    {
+        return -1;
+    }
+
+    if (dst.Copy(this->queue, src, length / 4, length / 2, length / 4))
+    {
+        auto ms = src.Map(this->queue, CLFlags::RO);
+        auto md = dst.Map(this->queue, CLFlags::RO);
+        if (!ms || !md)
+        {
+            return -1;
+        }
+
+        for (size_t i = 0; i < length; i++)
+        {
+            if (ms[i] != md[i])
+            {
+                return -1;
+            }
+        }
+    }
+    else
+    {
+        return -1;
+    }
+
+    // copy 2d to 1d
+    auto b2d = CLB2D<int>::Create(this->context, CLFlags::RO, width, height * depth, 0);
+    ASSERT(b2d);
+    {
+        auto map = b2d.Map(this->queue, CLFlags::WO);
+        if (!map)
+        {
+            return -1;
+        }
+
+        for (size_t i = 0; i < height * depth; i++)
+        {
+            auto row = (int*)((char*)&map[0] + i * b2d.Pitch());
+            for (size_t j = 0; j < width; j++)
+            {
+                row[j] = 222;
+            }
+        }
+    }
+
+    if(dst.Copy(this->queue, b2d, 0, 0, 0, width, height * depth, 1))
+    {
+        auto map = dst.Map(this->queue, CLFlags::RO);
+        if (!map)
+        {
+            return -1;
+        }
+
+        for (size_t i = 0; i < length; i++)
+        {
+            if (222 != map[i])
+            {
+                return -1;
+            }
+        }
+    }
+    else
+    {
+        return -1;
+    }
+
+    // copy 3d to 1d
+    auto b3d = CLB3D<int>::Create(this->context, CLFlags::RO, width, height, depth, 0, 0);
+    ASSERT(b3d);
+    {
+        auto map = b3d.Map(this->queue, CLFlags::WO);
+        for (size_t i = 0; i < b3d.Depth(); i++)
+        {
+            auto slc = (char*)&map[0] + i * b3d.Slice();
+
+            for (size_t j = 0; j < b3d.Height(); j++)
+            {
+                auto row = (int*)(slc + j * b3d.Pitch());
+
+                for (size_t k = 0; k < b3d.Width(); k++)
+                {
+                    row[k] = 333;
+                }
+            }
+        }
+    }
+
+    if (dst.Copy(this->queue, b3d, 0, 0, 0, width, height, depth))
+    {
+        auto map = dst.Map(this->queue, CLFlags::RO);
+        if (!map)
+        {
+            return -1;
+        }
+
+        for (size_t i = 0; i < length; i++)
+        {
+            if (333 != map[i])
+            {
+                return -1;
+            }
+        }
+    }
+    else
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
 int Test::BufferMapCopy()
 {
     if (!*this)
@@ -161,7 +318,7 @@ int Test::BufferMapCopy()
         }
     }
 
-    return 0;
+    return this->CLBufMapCopy();
 }
 
 int Test::BufferReadWrite()
