@@ -124,6 +124,7 @@ public:
         return this->slice;
     }
 
+    // Map functions
     CLMemMap<T> Map(cl_command_queue queue, int32_t flags)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
@@ -192,8 +193,8 @@ public:
         return CLMemMap<T>(this->mem, queue, event, map);
     }
 
-    template<size_t DS>
-    bool Copy(cl_command_queue queue, const CLBuf<T, DS>& source, size_t srcX, size_t srcY, size_t srcZ, size_t width, size_t height, size_t depth,
+    // Copy functions
+    bool Copy(cl_command_queue queue, const CLBuf& src, size_t srcX, size_t srcY, size_t srcZ, size_t width, size_t height, size_t depth,
               size_t dstX, size_t dstY, size_t dstZ, const std::vector<cl_event>& waits)
     {
         std::vector<cl_event> events;
@@ -210,7 +211,7 @@ public:
         size_t region[3] = { width * sizeof(T), height, depth };
 
         cl_event event;
-        this->err = clEnqueueCopyBufferRect(queue, source.mem, this->mem, srcorg, dstorg, region, source.pitch, source.slice,
+        this->err = clEnqueueCopyBufferRect(queue, src.mem, this->mem, srcorg, dstorg, region, src.pitch, src.slice,
                                             this->pitch, this->slice, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
         if (CL_SUCCESS != this->err)
         {
@@ -225,45 +226,50 @@ public:
 
     // Copy 1d to 1d
     template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
-    bool Copy(cl_command_queue queue, const CLBuf<T, 1>& source)
+    bool Copy(cl_command_queue queue, const CLBuf<T, 1>& src)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err ) this->Wait(); });
-        return this->Copy(queue, source, {});
+        return this->Copy(queue, src, {});
     }
     template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
-    bool Copy(cl_command_queue queue, const CLBuf<T, 1>& source, const std::vector<cl_event>& waits)
+    bool Copy(cl_command_queue queue, const CLBuf<T, 1>& src, const std::vector<cl_event>& waits)
     {
-        auto length = this->Length() < source.Length() ? this->Length() : source.Length();
-        return this->Copy(queue, source, 0, length, 0, waits);
+        auto length = this->Length() < src.Length() ? this->Length() : src.Length();
+        return this->Copy(queue, src, 0, length, 0, waits);
     }
     template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
-    bool Copy(cl_command_queue queue, const CLBuf<T, 1>& source, size_t srcoff, size_t length, size_t dstoff)
+    bool Copy(cl_command_queue queue, const CLBuf<T, 1>& src, size_t srcoff, size_t length, size_t dstoff)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
-        return this->Copy(queue, source, srcoff, length, dstoff, {});
+        return this->Copy(queue, src, srcoff, length, dstoff, {});
     }
     template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
-    bool Copy(cl_command_queue queue, const CLBuf<T, 1>& source, size_t srcoff, size_t length, size_t dstoff, const std::vector<cl_event>& waits)
+    bool Copy(cl_command_queue queue, const CLBuf<T, 1>& src, size_t srcoff, size_t length, size_t dstoff, const std::vector<cl_event>& waits)
     {
-        if (source.Length() < srcoff + length || this->Length() < dstoff + length)
-        {
-            this->err = CL_INVALID_VALUE;
-            return false;
-        }
-
-        return this->Copy(queue, source, srcoff, 0, 0, length, 1, 1, dstoff, 0, 0, waits);
+        return this->Copy(queue, src, srcoff, 0, 0, length, 1, 1, dstoff, 0, 0, waits);
     }
 
     // Copy 2d/3d to 1d
     template<size_t Ds, size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
-    bool Copy(cl_command_queue queue, const CLBuf<T, Ds>& source, size_t srcX, size_t srcY, size_t srcZ,
+    bool Copy(cl_command_queue queue, const CLBuf<T, Ds>& src)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Copy(queue, src, {});
+    }
+    template<size_t Ds, size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    bool Copy(cl_command_queue queue, const CLBuf<T, Ds>& src, const std::vector<cl_event>& waits)
+    {
+        return this->Copy(queue, src, 0, 0, 0, src.width, src.height, src.depth, waits);
+    }
+    template<size_t Ds, size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    bool Copy(cl_command_queue queue, const CLBuf<T, Ds>& src, size_t srcX, size_t srcY, size_t srcZ,
               size_t width, size_t height, size_t depth)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
-        return this->Copy(queue, source, srcX, srcY, srcZ, width, height, depth, {});
+        return this->Copy(queue, src, srcX, srcY, srcZ, width, height, depth, {});
     }
     template<size_t Ds, size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
-    bool Copy(cl_command_queue queue, const CLBuf<T, Ds>& source, size_t srcX, size_t srcY, size_t srcZ,
+    bool Copy(cl_command_queue queue, const CLBuf<T, Ds>& src, size_t srcX, size_t srcY, size_t srcZ,
               size_t width, size_t height, size_t depth, const std::vector<cl_event>& waits)
     {
         if (!width || !height || !depth)
@@ -291,11 +297,11 @@ public:
         size_t dstorg[3] = { 0, 0, 0 };
         size_t region[3] = { width * sizeof(T), height, depth };
 
-        size_t pitch = source.width  * sizeof(T);
-        size_t slice = source.height * pitch;
+        size_t pitch = src.width  * sizeof(T);
+        size_t slice = src.height * pitch;
 
         cl_event event;
-        this->err = clEnqueueCopyBufferRect(queue, source, this->mem, srcorg, dstorg, region, source.pitch, source.slice, pitch, slice,
+        this->err = clEnqueueCopyBufferRect(queue, src, this->mem, srcorg, dstorg, region, src.pitch, src.slice, pitch, slice,
                                             (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
         if (CL_SUCCESS != this->err)
         {
@@ -308,6 +314,230 @@ public:
         return true;
     }
 
+    // Read functions
+    bool Read(cl_command_queue queue, size_t srcX, size_t srcY, size_t srcZ, size_t width, size_t height, size_t depth, T* dst,
+              size_t dstX, size_t dstY, size_t dstZ, size_t pitch, size_t slice, const std::vector<cl_event>& waits) const
+    {
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        size_t srcorg[3] = { srcX * sizeof(T), srcY, srcZ };
+        size_t dstorg[3] = { dstX * sizeof(T), dstY, dstZ };
+        size_t region[3] = { width * sizeof(T), height, depth };
+
+        if (0 == pitch)
+        {
+            pitch = width * sizeof(T);
+        }
+
+        if (0 == slice)
+        {
+            slice = height * pitch;
+        }
+
+        cl_event event;
+        this->err = clEnqueueReadBufferRect(queue, this->mem, CL_FALSE, srcorg, dstorg, region, this->pitch, this->slice, pitch, slice,
+                                            dst, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
+        return true;
+    }
+
+    // Read 1d
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    bool Read(cl_command_queue queue, T* dst) const
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Read(queue, dst, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    bool Read(cl_command_queue queue, T* dst, const std::vector<cl_event>& waits) const
+    {
+        return this->Read(queue, 0, this->Length(), dst, waits);
+    }
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    bool Read(cl_command_queue queue, size_t offset, size_t length, T* dst) const
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Read(queue, offset, length, dst, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    bool Read(cl_command_queue queue, size_t offset, size_t length, T* dst, const std::vector<cl_event>& waits) const
+    {
+        return this->Read(queue, offset, 0, 0, length, 1, 1, dst, 0, 0, 0, 0, 0, waits);
+    }
+
+    // Read 2d
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    bool Read(cl_command_queue queue, T* dst) const
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Read(queue, dst, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    bool Read(cl_command_queue queue, T* dst, const std::vector<cl_event>& waits) const
+    {
+        return this->Read(queue, 0, 0, this->width, this->height, dst, 0, 0, 0);
+    }
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    bool Read(cl_command_queue queue, size_t srcX, size_t srcY, size_t width, size_t height, T* dst,
+              size_t dstX, size_t dstY, size_t pitch) const
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Read(queue, srcX, srcY, width, height, dst, dstX, dstY, pitch, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    bool Read(cl_command_queue queue, size_t srcX, size_t srcY, size_t width, size_t height, T* dst,
+              size_t dstX, size_t dstY, size_t pitch, const std::vector<cl_event>& waits) const
+    {
+        return this->Read(queue, srcX, srcY, 0, width, height, 1, dst, dstX, dstY, 0, pitch, 0, waits);
+    }
+
+    // Read 3d
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    bool Read(cl_command_queue queue, T* dst) const
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Read(queue, dst, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    bool Read(cl_command_queue queue, T* dst, const std::vector<cl_event>& waits) const
+    {
+        return this->Read(queue, 0, 0, 0, this->width, this->height, this->depth, dst, 0, 0, 0, 0, 0, waits);
+    }
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    bool Read(cl_command_queue queue, size_t srcX, size_t srcY, size_t srcZ, size_t width, size_t height, size_t depth, T* dst,
+              size_t dstX, size_t dstY, size_t dstZ, size_t pitch, size_t slice, const std::vector<cl_event>& waits) const
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Read(queue, srcX, srcY, srcZ, width, height, depth, dst, dstX, dstY, dstZ, pitch, slice, {});
+    }
+
+    // Write functions
+    bool Write(cl_command_queue queue, size_t dstX, size_t dstY, size_t dstZ, size_t width, size_t height, size_t depth, const T* src,
+               size_t srcX, size_t srcY, size_t srcZ, size_t pitch, size_t slice, const std::vector<cl_event>& waits)
+    {
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        size_t srcorg[3] = { srcX * sizeof(T), srcY, srcZ };
+        size_t dstorg[3] = { dstX * sizeof(T), dstY, dstZ };
+        size_t region[3] = { width * sizeof(T), height, depth};
+
+        if (0 == pitch)
+        {
+            pitch = width * sizeof(T);
+        }
+
+        if (0 == slice)
+        {
+            slice = height * pitch;
+        }
+
+        cl_event event;
+        this->err = clEnqueueWriteBufferRect(queue, this->mem, CL_FALSE, dstorg, srcorg, region, this->pitch, this->slice, pitch, slice,
+                                             src, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
+        return true;
+    }
+
+    // Async write may not working on Intel platform. clEnqueueWriteBufferRect seems cannot handle wait list properly.
+    // Write 1d
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    bool Write(cl_command_queue queue, const T* src)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Write(queue, src, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    bool Write(cl_command_queue queue, const T* src, const std::vector<cl_event>& waits)
+    {
+        return this->Write(queue, 0, this->Length(), src, waits);
+    }
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    bool Write(cl_command_queue queue, size_t offset, size_t length, const T* src)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Write(queue, offset, length, src, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    bool Write(cl_command_queue queue, size_t offset, size_t length, const T* src, const std::vector<cl_event>& waits)
+    {
+        return this->Write(queue, offset, 0, 0, length, 1, 1, src, 0, 0, 0, 0, 0, waits);
+    }
+
+    // Write 2d
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    bool Write(cl_command_queue queue, const T* src)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Write(queue, src, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    bool Write(cl_command_queue queue, const T* src, const std::vector<cl_event>& waits)
+    {
+        return this->Write(queue, 0, 0, this->width, this->height, src, 0, 0, 0, waits);
+    }
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    bool Write(cl_command_queue queue, size_t dstX, size_t dstY, size_t width, size_t height, const T* src,
+               size_t srcX, size_t srcY, size_t pitch)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Write(queue, dstX, dstY, width, height, src, srcX, srcY, pitch, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    bool Write(cl_command_queue queue, size_t dstX, size_t dstY, size_t width, size_t height, const T* src,
+               size_t srcX, size_t srcY, size_t pitch, const std::vector<cl_event>& waits)
+    {
+        return this->Write(queue, dstX, dstY, 0, width, height, 1, src, srcX, srcY, 0, pitch, 0, waits);
+    }
+
+    // Write 3d
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    bool Write(cl_command_queue queue, const T* src)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Write(queue, src, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    bool Write(cl_command_queue queue, const T* src, const std::vector<cl_event>& waits)
+    {
+        return this->Write(queue, 0, 0, 0, this->width, this->height, this->depth, src, 0, 0, 0, 0, 0);
+    }
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    bool Write(cl_command_queue queue, size_t dstX, size_t dstY, size_t dstZ, size_t width, size_t height, size_t depth, const T* src,
+               size_t srcX, size_t srcY, size_t srcZ, size_t pitch, size_t slice)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Write(queue, dstX, dstY, dstZ, width, height, depth, src, srcX, srcY, srcZ, pitch, slice, {});
+    }
+
+    // Create functions
     template<size_t Dim = D, typename std::enable_if<1 == Dim, CLBuf<T, 1>>::type* = 0>
     static CLBuf<T, 1> Create(cl_context context, int32_t flags, size_t length)
     {

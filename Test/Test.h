@@ -11,6 +11,7 @@ public:
     int ContextCreate();
     int ContextDevice();
     int CLBufMapCopy();
+    int CLBufReadWrite();
     int BufferMapCopy();
     int BufferReadWrite();
     int Buff2DMapCopy();

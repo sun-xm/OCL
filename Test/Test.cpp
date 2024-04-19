@@ -201,7 +201,7 @@ int Test::CLBufMapCopy()
         }
     }
 
-    if(dst.Copy(this->queue, b2d, 0, 0, 0, width, height * depth, 1))
+    if(dst.Copy(this->queue, b2d))
     {
         auto map = dst.Map(this->queue, CLFlags::RO);
         if (!map)
@@ -243,7 +243,7 @@ int Test::CLBufMapCopy()
         }
     }
 
-    if (dst.Copy(this->queue, b3d, 0, 0, 0, width, height, depth))
+    if (dst.Copy(this->queue, b3d))
     {
         auto map = dst.Map(this->queue, CLFlags::RO);
         if (!map)
@@ -262,6 +262,88 @@ int Test::CLBufMapCopy()
     else
     {
         return -1;
+    }
+
+    return 0;
+}
+
+int Test::CLBufReadWrite()
+{
+    if (!*this)
+    {
+        return -1;
+    }
+
+    const size_t width  = 5;
+    const size_t height = 5;
+    const size_t depth  = 4;
+    const size_t length = width * height * depth;
+
+    auto buf = CLBuf<int>::Create(this->context, CLFlags::RW, length);
+    ASSERT(buf);
+
+    vector<int> src(length, 123);
+    if (!buf.Write(this->queue, src.data()))
+    {
+        return -1;
+    }
+
+    vector<int> dst(length, 0);
+    if (!buf.Read(this->queue, &dst[0]))
+    {
+        return -1;
+    }
+
+    for (size_t i = 0; i < dst.size(); i++)
+    {
+        if (123 != dst[i])
+        {
+            return -1;
+        }
+    }
+
+    auto b2d = CLB2D<int>::Create(this->context, CLFlags::RW, width, height * depth, 0);
+    ASSERT(b2d);
+
+    if (!b2d.Write(this->queue, src.data()))
+    {
+        return -1;
+    }
+
+    dst = vector<int>(length, 0);
+    if (!b2d.Read(this->queue, &dst[0]))
+    {
+        return -1;
+    }
+
+    for (size_t i = 0; i < dst.size(); i++)
+    {
+        if (123 != dst[i])
+        {
+            return -1;
+        }
+    }
+
+    auto b3d = CLB3D<int>::Create(this->context, CLFlags::RW, width, height, depth, 0, 0);
+    ASSERT(b3d);
+
+    if (!b3d.Write(this->queue, src.data()))
+    {
+        return -1;
+    }
+
+    dst = vector<int>(length, 0);
+    if (!b3d.Read(this->queue, &dst[0]))
+    {
+        return -1;
+    }
+
+    for (size_t i = 0; i < dst.size(); i++)
+    {
+        if (123 != dst[i])
+        {
+            return -1;
+        }
     }
 
     return 0;
@@ -365,7 +447,7 @@ int Test::BufferReadWrite()
         }
     }
 
-    return 0;
+    return this->CLBufReadWrite();
 }
 
 int Test::Buff2DMapCopy()
