@@ -34,7 +34,7 @@ public:
         }
         this->err = err;
     }
-    CLBuf(CLBuf&& other)
+    CLBuf(CLBuf&& other) : CLBuf()
     {
         *this = std::forward(other);
     }
