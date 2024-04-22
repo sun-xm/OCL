@@ -182,7 +182,7 @@ int Test::CLBufMapCopy()
     }
 
     // copy 2d to 1d
-    auto b2d = CLB2D<int>::Create(this->context, CLFlags::RO, width, height * depth, 0);
+    auto b2d = CLB2D<int>::Create(this->context, CLFlags::RO, width, height * depth);
     ASSERT(b2d);
     {
         auto map = b2d.Map(this->queue, CLFlags::WO);
@@ -223,7 +223,7 @@ int Test::CLBufMapCopy()
     }
 
     // copy 3d to 1d
-    auto b3d = CLB3D<int>::Create(this->context, CLFlags::RO, width, height, depth, 0, 0);
+    auto b3d = CLB3D<int>::Create(this->context, CLFlags::RO, width, height, depth);
     ASSERT(b3d);
     {
         auto map = b3d.Map(this->queue, CLFlags::WO);
@@ -265,7 +265,7 @@ int Test::CLBufMapCopy()
     }
 
     // Copy 1d to 2d
-    b2d = CLB2D<int>::Create(this->context, CLFlags::RO, width * depth, height, 0);
+    b2d = CLB2D<int>::Create(this->context, CLFlags::RO, width * depth, height);
     ASSERT(b2d);
 
     if (b2d.Copy(this->queue, dst))
@@ -289,7 +289,7 @@ int Test::CLBufMapCopy()
     }
 
     // Copy 1d to 3d
-    b3d = CLB3D<int>::Create(this->context, CLFlags::RO, width, height, depth, 0, 0);
+    b3d = CLB3D<int>::Create(this->context, CLFlags::RO, width, height, depth);
     ASSERT(b3d);
 
     if (b3d.Copy(this->queue, dst))
@@ -333,8 +333,8 @@ int Test::CLBuf2D3DCopy()
     const size_t depth  = 5;
 
     // copy 2d to 2d
-    auto s2d = CLB2D<int>::Create(this->context, CLFlags::RO, width, height, 0);
-    auto d2d = CLB2D<int>::Create(this->context, CLFlags::WO, width - 1, height - 1, 0);
+    auto s2d = CLB2D<int>::Create(this->context, CLFlags::RO, width, height);
+    auto d2d = CLB2D<int>::Create(this->context, CLFlags::WO, width - 1, height - 1);
     ASSERT(s2d);
     ASSERT(d2d);
 
@@ -389,8 +389,8 @@ int Test::CLBuf2D3DCopy()
     }
 
     // Copy 3d to 3d
-    auto s3d = CLB3D<int>::Create(this->context, CLFlags::RO, width, height, depth, 0, 0);
-    auto d3d = CLB3D<int>::Create(this->context, CLFlags::WO, width + 1, height + 1, depth + 1, 0, 0);
+    auto s3d = CLB3D<int>::Create(this->context, CLFlags::RO, width, height, depth);
+    auto d3d = CLB3D<int>::Create(this->context, CLFlags::WO, width + 1, height + 1, depth + 1);
     ASSERT(s3d);
     ASSERT(d3d);
 
@@ -485,7 +485,7 @@ int Test::CLBufReadWrite()
         }
     }
 
-    auto b2d = CLB2D<int>::Create(this->context, CLFlags::RW, width, height * depth, 0);
+    auto b2d = CLB2D<int>::Create(this->context, CLFlags::RW, width, height * depth);
     ASSERT(b2d);
 
     if (!b2d.Write(this->queue, src.data()))
@@ -507,7 +507,7 @@ int Test::CLBufReadWrite()
         }
     }
 
-    auto b3d = CLB3D<int>::Create(this->context, CLFlags::RW, width, height, depth, 0, 0);
+    auto b3d = CLB3D<int>::Create(this->context, CLFlags::RW, width, height, depth);
     ASSERT(b3d);
 
     if (!b3d.Write(this->queue, src.data()))

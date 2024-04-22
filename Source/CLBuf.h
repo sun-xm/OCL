@@ -667,7 +667,7 @@ public:
     }
 
     template<size_t Dim = D, typename std::enable_if<2 == Dim, CLBuf<T, 2>>::type* = 0>
-    static CLBuf<T, 2> Create(cl_context context, int32_t flags, size_t width, size_t height, size_t pitch)
+    static CLBuf<T, 2> Create(cl_context context, int32_t flags, size_t width, size_t height, size_t pitch = 0)
     {
         cl_mem_flags mflags;
         switch (flags)
@@ -712,7 +712,7 @@ public:
     }
 
     template<size_t Dim = D, typename std::enable_if<3 == Dim, CLBuf<T, 3>>::type* = 0>
-    static CLBuf<T, 3> Create(cl_context context, int32_t flags, size_t width, size_t height, size_t depth, size_t pitch, size_t slice)
+    static CLBuf<T, 3> Create(cl_context context, int32_t flags, size_t width, size_t height, size_t depth, size_t pitch = 0, size_t slice = 0)
     {
         cl_mem_flags mflags;
         switch (flags)
