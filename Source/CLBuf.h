@@ -36,7 +36,7 @@ public:
     }
     CLBuf(CLBuf&& other) : CLBuf()
     {
-        *this = std::forward(other);
+        *this = std::forward<CLBuf>(other);
     }
     CLBuf(const CLBuf&) = delete;
     virtual ~CLBuf()
