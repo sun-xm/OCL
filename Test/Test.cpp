@@ -264,6 +264,189 @@ int Test::CLBufMapCopy()
         return -1;
     }
 
+    // Copy 1d to 2d
+    b2d = CLB2D<int>::Create(this->context, CLFlags::RO, width * depth, height, 0);
+    ASSERT(b2d);
+
+    if (b2d.Copy(this->queue, dst))
+    {
+        auto map = b2d.Map(this->queue, CLFlags::RO);
+        for (size_t i = 0; i < b2d.Height(); i++)
+        {
+            auto row = (int*)((char*)&map[0] + i * b2d.Pitch());
+            for (size_t j = 0; j < b2d.Width(); j++)
+            {
+                if (333 != row[j])
+                {
+                    return false;
+                }
+            }
+        }
+    }
+    else
+    {
+        return -1;
+    }
+
+    // Copy 1d to 3d
+    b3d = CLB3D<int>::Create(this->context, CLFlags::RO, width, height, depth, 0, 0);
+    ASSERT(b3d);
+
+    if (b3d.Copy(this->queue, dst))
+    {
+        auto map = b3d.Map(this->queue, CLFlags::RO);
+        for (size_t i = 0; i < b3d.Depth(); i++)
+        {
+            auto slc = (char*)&map[0] + i * b3d.Slice();
+
+            for (size_t j = 0; j < b3d.Height(); j++)
+            {
+                auto row = (int*)(slc + j * b3d.Pitch());
+
+                for (size_t k = 0; k < b3d.Width(); k++)
+                {
+                    if (333 != row[k])
+                    {
+                        return -1;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        return -1;
+    }
+
+    return this->CLBuf2D3DCopy();
+}
+
+int Test::CLBuf2D3DCopy()
+{
+    if (!*this)
+    {
+        return -1;
+    }
+
+    const size_t width  = 5;
+    const size_t height = 5;
+    const size_t depth  = 5;
+
+    // copy 2d to 2d
+    auto s2d = CLB2D<int>::Create(this->context, CLFlags::RO, width, height, 0);
+    auto d2d = CLB2D<int>::Create(this->context, CLFlags::WO, width - 1, height - 1, 0);
+    ASSERT(s2d);
+    ASSERT(d2d);
+
+    {
+        auto map = s2d.Map(this->queue, CLFlags::WO);
+        if (!map)
+        {
+            return -1;
+        }
+
+        for (size_t i = 0; i < s2d.Height(); i++)
+        {
+            auto row = (int*)((char*)&map[0] + i * s2d.Pitch());
+            for (size_t j = 0; j < s2d.Width(); j++)
+            {
+                row[j] = 123;
+            }
+        }
+    }
+
+    vector<int> view(width * height);
+    s2d.Read(this->queue, &view[0]);
+
+    if (d2d.Copy(this->queue, s2d, 0, 0, width, height, 0, 0))
+    {
+        return -1;
+    }
+
+    if (d2d.Copy(this->queue, s2d))
+    {
+        auto map = d2d.Map(this->queue, CLFlags::RO);
+        if (!map)
+        {
+            return -1;
+        }
+
+        for (size_t i = 0; i < d2d.Height(); i++)
+        {
+            auto row = (int*)((char*)&map[0] + i * d2d.Pitch());
+            for (size_t j = 0; j < d2d.Width(); j++)
+            {
+                if (123 != row[j])
+                {
+                    return -1;
+                }
+            }
+        }
+    }
+    else
+    {
+        return -1;
+    }
+
+    // Copy 3d to 3d
+    auto s3d = CLB3D<int>::Create(this->context, CLFlags::RO, width, height, depth, 0, 0);
+    auto d3d = CLB3D<int>::Create(this->context, CLFlags::WO, width + 1, height + 1, depth + 1, 0, 0);
+    ASSERT(s3d);
+    ASSERT(d3d);
+
+    {
+        auto map = s3d.Map(this->queue, CLFlags::WO);
+        if (!map)
+        {
+            return -1;
+        }
+
+        for (size_t i = 0; i < s3d.Depth(); i++)
+        {
+            auto slc = (char*)&map[0] + i * s3d.Slice();
+            for (size_t j = 0; j < s3d.Height(); j++)
+            {
+                auto row = (int*)(slc + j * s3d.Pitch());
+                for (size_t k = 0; k < s3d.Width(); k++)
+                {
+                    row[k] = 123;
+                }
+            }
+        }
+    }
+
+    if (d3d.Copy(this->queue, s3d))
+    {
+        auto map = d3d.Map(this->queue, CLFlags::RO);
+        if (!map)
+        {
+            return -1;
+        }
+
+        for (size_t i = 0; i < d3d.Depth(); i++)
+        {
+            auto slc = (char*)&map[0] + i * d3d.Slice();
+            for (size_t j = 0; j < d3d.Height(); j++)
+            {
+                auto row = (int*)(slc + j * d3d.Pitch());
+                for (size_t k = 0; k < d3d.Width(); k++)
+                {
+                    if (i < depth && j < height && k < width)
+                    {
+                        if (123 != row[k])
+                        {
+                            return -1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        return -1;
+    }
+
     return 0;
 }
 

@@ -57,6 +57,7 @@ public:
         std::swap(this->depth,  other.depth);
         std::swap(this->pitch,  other.pitch);
         std::swap(this->slice,  other.slice);
+        return *this;
     }
     CLBuf& operator=(const CLBuf&) = delete;
 
@@ -193,10 +194,21 @@ public:
         return CLMemMap<T>(this->mem, queue, event, map);
     }
 
-    // Copy functions
+    // General copy
     bool Copy(cl_command_queue queue, const CLBuf& src, size_t srcX, size_t srcY, size_t srcZ, size_t width, size_t height, size_t depth,
               size_t dstX, size_t dstY, size_t dstZ, const std::vector<cl_event>& waits)
     {
+        if (srcX + width  > src.width    ||
+            srcY + height > src.height   ||
+            srcZ + depth  > src.depth    ||
+            dstX + width  > this->width  ||
+            dstY + height > this->height ||
+            dstZ + depth  > this->depth)
+        {
+            this->err = CL_INVALID_OPERATION;
+            return false;
+        }
+
         std::vector<cl_event> events;
         for (auto& e : waits)
         {
@@ -249,7 +261,57 @@ public:
         return this->Copy(queue, src, srcoff, 0, 0, length, 1, 1, dstoff, 0, 0, waits);
     }
 
-    // Copy 2d/3d to 1d
+    // Copy 2d to 2d
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    bool Copy(cl_command_queue queue, const CLBuf<T, 2>& src)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Copy(queue, src, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    bool Copy(cl_command_queue queue, const CLBuf<T, 2>& src, const std::vector<cl_event>& waits)
+    {
+        auto wdith  = this->width  < src.width  ? this->width  : src.width;
+        auto height = this->height < src.height ? this->height : src.height;
+        return this->Copy(queue, src, 0, 0, width, height, 0, 0, waits);
+    }
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    bool Copy(cl_command_queue queue, const CLBuf<T, 2>& src, size_t srcX, size_t srcY, size_t width, size_t height, size_t dstX, size_t dstY)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Copy(queue, src, srcX, srcY, width, height, dstX, dstY, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    bool Copy(cl_command_queue queue, const CLBuf<T, 2>& src, size_t srcX, size_t srcY, size_t width, size_t height,
+              size_t dstX, size_t dstY, const std::vector<cl_event>& waits)
+    {
+        return this->Copy(queue, src, srcX, srcY, 0, width, height, 1, dstX, dstY, 0, waits);
+    }
+
+    // Copy 3d to 3d
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    bool Copy(cl_command_queue queue, const CLBuf<T, 3>& src)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait();});
+        return this->Copy(queue, src, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    bool Copy(cl_command_queue queue, const CLBuf<T, 3>& src, const std::vector<cl_event>& waits)
+    {
+        auto width  = this->width  < src.width  ? this->width  : src.width;
+        auto height = this->height < src.height ? this->height : src.height;
+        auto depth  = this->depth  < src.depth  ? this->depth  : src.depth;
+        return this->Copy(queue, src, 0, 0, 0, width, height, depth, 0, 0, 0, waits);
+    }
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    bool Copy(cl_command_queue queue, const CLBuf<T, 3>& src, size_t srcX, size_t srcY, size_t srcZ,
+              size_t width, size_t height, size_t depth, size_t dstX, size_t dstY, size_t dstZ)
+    {
+        ONCLENAUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Copy(queue, srcX, srcY, srcZ, width, height, depth, dstX, dstY, dstZ, {});
+    }
+
+    // Copy 2d/3d whole to 1d
     template<size_t Ds, size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
     bool Copy(cl_command_queue queue, const CLBuf<T, Ds>& src)
     {
@@ -259,26 +321,7 @@ public:
     template<size_t Ds, size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
     bool Copy(cl_command_queue queue, const CLBuf<T, Ds>& src, const std::vector<cl_event>& waits)
     {
-        return this->Copy(queue, src, 0, 0, 0, src.width, src.height, src.depth, waits);
-    }
-    template<size_t Ds, size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
-    bool Copy(cl_command_queue queue, const CLBuf<T, Ds>& src, size_t srcX, size_t srcY, size_t srcZ,
-              size_t width, size_t height, size_t depth)
-    {
-        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
-        return this->Copy(queue, src, srcX, srcY, srcZ, width, height, depth, {});
-    }
-    template<size_t Ds, size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
-    bool Copy(cl_command_queue queue, const CLBuf<T, Ds>& src, size_t srcX, size_t srcY, size_t srcZ,
-              size_t width, size_t height, size_t depth, const std::vector<cl_event>& waits)
-    {
-        if (!width || !height || !depth)
-        {
-            this->err = CL_INVALID_VALUE;
-            return false;
-        }
-
-        if (this->Length() < width * height * depth)
+        if (this->Length() != src.width * src.height * src.depth)
         {
             this->err = CL_INVALID_OPERATION;
             return false;
@@ -293,11 +336,11 @@ public:
             }
         }
 
-        size_t srcorg[3] = { srcX * sizeof(T), srcY, srcZ };
+        size_t srcorg[3] = { 0, 0, 0 };
         size_t dstorg[3] = { 0, 0, 0 };
-        size_t region[3] = { width * sizeof(T), height, depth };
+        size_t region[3] = { src.width * sizeof(T), src.height, src.depth };
 
-        size_t pitch = src.width  * sizeof(T);
+        size_t pitch = region[0];
         size_t slice = src.height * pitch;
 
         cl_event event;
@@ -314,7 +357,53 @@ public:
         return true;
     }
 
-    // Read functions
+    // Copy 1d whole to 2d/3d
+    template<size_t Dim = D, typename std::enable_if<2 == Dim || 3 == Dim, bool>::type = 0>
+    bool Copy(cl_command_queue queue, const CLBuf<T, 1>& src)
+    {
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        return this->Copy(queue, src, {});
+    }
+    template<size_t Dim = D, typename std::enable_if<2 == Dim || 3 == Dim, bool>::type = 0>
+    bool Copy(cl_command_queue queue, const CLBuf<T, 1>& src, const std::vector<cl_event>& waits)
+    {
+        if (src.Length() != this->width * this->height * this->depth)
+        {
+            this->err = CL_INVALID_OPERATION;
+            return false;
+        }
+
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        size_t srcorg[3] = { 0, 0, 0 };
+        size_t dstorg[3] = { 0, 0, 0 };
+        size_t region[3] = { this->width * sizeof(T), this->height, this->depth };
+
+        size_t pitch = region[0];
+        size_t slice = this->height * pitch;
+
+        cl_event event;
+        this->err = clEnqueueCopyBufferRect(queue, src, this->mem, srcorg, dstorg, region, pitch, slice, this->pitch, this->slice,
+                                            (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
+        return true;
+    }
+
+    // General read
     bool Read(cl_command_queue queue, size_t srcX, size_t srcY, size_t srcZ, size_t width, size_t height, size_t depth, T* dst,
               size_t dstX, size_t dstY, size_t dstZ, size_t pitch, size_t slice, const std::vector<cl_event>& waits) const
     {
@@ -425,7 +514,7 @@ public:
         return this->Read(queue, srcX, srcY, srcZ, width, height, depth, dst, dstX, dstY, dstZ, pitch, slice, {});
     }
 
-    // Write functions
+    // General write
     bool Write(cl_command_queue queue, size_t dstX, size_t dstY, size_t dstZ, size_t width, size_t height, size_t depth, const T* src,
                size_t srcX, size_t srcY, size_t srcZ, size_t pitch, size_t slice, const std::vector<cl_event>& waits)
     {
