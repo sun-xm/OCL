@@ -532,6 +532,54 @@ int Test::BufferReadWrite()
     return 0;
 }
 
+int Test::BufferAsyncWrite()
+{
+    const size_t width  = 100;
+    const size_t height = 100;
+
+    vector<int> src0(width * height, 123);
+    vector<int> src1(width * height / 4, 321);
+
+    auto dst = CLBuff2D<int>::Create(this->context, CLFlags::RO, width, height);
+    ASSERT(dst);
+
+    if (!dst.Write(this->queue, src0.data(), {}))
+    {
+        return -1;
+    }
+
+    if (!dst.Write(this->queue, width / 2, height / 2, width / 2, height / 2, src1.data(), 0, 0, 0, { dst }))
+    {
+        return -1;
+    }
+
+    if (!dst.Read(this->queue, &src0[0], { dst }))
+    {
+        return -1;
+    }
+    dst.Wait();
+
+    for (size_t i = 0; i < height; i++)
+    {
+        for (size_t j = 0; j < width; j++)
+        {
+            if (i >= height / 2 && j >= width / 2)
+            {
+                if (321 != src0[i * width + j])
+                {
+                    return -1;
+                }
+            }
+            else if (123 != src0[i * width + j])
+            {
+                return -1;
+            }
+        }
+    }
+
+    return 0;
+}
+
 int Test::ImageCreation()
 {
     if (!*this)
@@ -643,17 +691,16 @@ int Test::ImageReadWrite()
     ASSERT(img);
 
     vector<uint32_t> pix(w * h, 0xFFFEFDFC);
-    img.Write(this->queue, { 0, 0 }, { w, h }, pix.data(), 0, 0, {});
-    if (img.Error())
+    if (!img.Write(this->queue, { 0, 0 }, { w, h }, pix.data(), 0, 0, {}))
     {
         return -1;
     }
 
     // Looks on Intel platform image need to be touched by kernels before can be read out correctly.
-    auto touch = this->program.CreateKernel("touchImage");
-    touch.Args(img);
-    touch.Size({ w, h });
-    touch.Execute(this->queue, { img });
+    // auto touch = this->program.CreateKernel("touchImage");
+    // touch.Args(img);
+    // touch.Size({ w, h });
+    // touch.Execute(this->queue, { img });
 
     const uint32_t x = 50;
     const uint32_t y = 50;
@@ -661,8 +708,7 @@ int Test::ImageReadWrite()
     pix.clear();
     pix.resize((w - x) * (h - y), 0);
 
-    img.Read(this->queue, { x, y }, { w - x, h - y }, &pix[0], 0, 0, { img });
-    if (img.Error())
+    if (!img.Read(this->queue, { x, y }, { w - x, h - y }, &pix[0], 0, 0, { img }))
     {
         return -1;
     }

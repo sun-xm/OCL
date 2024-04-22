@@ -13,6 +13,7 @@ public:
     int Buffer2D3DCopy();
     int BufferMapCopy();
     int BufferReadWrite();
+    int BufferAsyncWrite();
     int ImageCreation();
     int ImageMapCopy();
     int ImageReadWrite();
