@@ -194,26 +194,6 @@ protected:
         return this->SetArgs(index + 1, args...);
     }
 
-    template<typename T, size_t D>
-    bool SetArgs(cl_uint index, const CLBuf<T, D>& buffer)
-    {
-        auto  mem = (cl_mem)buffer;
-        this->err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
-        return CL_SUCCESS == this->err;
-    }
-    template<typename T, size_t D, typename... Tx>
-    bool SetArgs(cl_uint index, const CLBuf<T, D>& buffer, const Tx&... args)
-    {
-        auto  mem = (cl_mem)buffer;
-        this->err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
-        if (CL_SUCCESS != this->err)
-        {
-            return false;
-        }
-
-        return this->SetArgs(index + 1, args...);
-    }
-
     template<typename T>
     bool SetArgs(cl_uint index, const CLBuffer<T>& buffer)
     {
