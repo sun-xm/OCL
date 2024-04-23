@@ -89,37 +89,37 @@ public:
         return this->evt;
     }
 
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, size_t>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     size_t Length() const
     {
         return this->width;
     }
 
-    template<size_t Dim = D, typename std::enable_if<Dim >= 2 && Dim <= 3, size_t>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<Dim >= 2 && Dim <= 3, T>::type* = 0>
     size_t Width() const
     {
         return this->width;
     }
 
-    template<size_t Dim = D, typename std::enable_if<Dim >= 2 && Dim <= 3, size_t>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<Dim >= 2 && Dim <= 3, T>::type* = 0>
     size_t Height() const
     {
         return this->height;
     }
 
-    template<size_t Dim = D, typename std::enable_if<Dim == 3, size_t>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<Dim == 3, T>::type* = 0>
     size_t Depth() const
     {
         return this->depth;
     }
 
-    template<size_t Dim = D, typename std::enable_if<Dim >= 2 && Dim <= 3, size_t>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<Dim >= 2 && Dim <= 3, T>::type* = 0>
     size_t Pitch() const
     {
         return this->pitch;
     }
 
-    template<size_t Dim = D, typename std::enable_if<3 == Dim, size_t>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, T>::type* = 0>
     size_t Slice() const
     {
         return this->slice;
@@ -237,51 +237,51 @@ public:
     }
 
     // Copy 1d to 1d
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 1>& src)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err ) this->Wait(); });
         return this->Copy(queue, src, {});
     }
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 1>& src, const std::vector<cl_event>& waits)
     {
         auto length = this->Length() < src.Length() ? this->Length() : src.Length();
         return this->Copy(queue, src, 0, length, 0, waits);
     }
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 1>& src, size_t srcoff, size_t length, size_t dstoff)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Copy(queue, src, srcoff, length, dstoff, {});
     }
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 1>& src, size_t srcoff, size_t length, size_t dstoff, const std::vector<cl_event>& waits)
     {
         return this->Copy(queue, src, srcoff, 0, 0, length, 1, 1, dstoff, 0, 0, waits);
     }
 
     // Copy 2d to 2d
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 2>& src)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Copy(queue, src, {});
     }
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 2>& src, const std::vector<cl_event>& waits)
     {
         auto wdith  = this->width  < src.width  ? this->width  : src.width;
         auto height = this->height < src.height ? this->height : src.height;
         return this->Copy(queue, src, 0, 0, width, height, 0, 0, waits);
     }
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 2>& src, size_t srcX, size_t srcY, size_t width, size_t height, size_t dstX, size_t dstY)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Copy(queue, src, srcX, srcY, width, height, dstX, dstY, {});
     }
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 2>& src, size_t srcX, size_t srcY, size_t width, size_t height,
               size_t dstX, size_t dstY, const std::vector<cl_event>& waits)
     {
@@ -289,13 +289,13 @@ public:
     }
 
     // Copy 3d to 3d
-    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 3>& src)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait();});
         return this->Copy(queue, src, {});
     }
-    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 3>& src, const std::vector<cl_event>& waits)
     {
         auto width  = this->width  < src.width  ? this->width  : src.width;
@@ -303,7 +303,7 @@ public:
         auto depth  = this->depth  < src.depth  ? this->depth  : src.depth;
         return this->Copy(queue, src, 0, 0, 0, width, height, depth, 0, 0, 0, waits);
     }
-    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 3>& src, size_t srcX, size_t srcY, size_t srcZ,
               size_t width, size_t height, size_t depth, size_t dstX, size_t dstY, size_t dstZ)
     {
@@ -312,13 +312,13 @@ public:
     }
 
     // Copy 2d/3d whole to 1d
-    template<size_t Ds, size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Ds, size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, Ds>& src)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Copy(queue, src, {});
     }
-    template<size_t Ds, size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Ds, size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, Ds>& src, const std::vector<cl_event>& waits)
     {
         if (this->Length() != src.width * src.height * src.depth)
@@ -358,13 +358,13 @@ public:
     }
 
     // Copy 1d whole to 2d/3d
-    template<size_t Dim = D, typename std::enable_if<2 == Dim || 3 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim || 3 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 1>& src)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Copy(queue, src, {});
     }
-    template<size_t Dim = D, typename std::enable_if<2 == Dim || 3 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim || 3 == Dim, T>::type* = 0>
     bool Copy(cl_command_queue queue, const CLBuffer<T, 1>& src, const std::vector<cl_event>& waits)
     {
         if (src.Length() != this->width * this->height * this->depth)
@@ -445,49 +445,49 @@ public:
     }
 
     // Read 1d
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Read(cl_command_queue queue, T* dst) const
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Read(queue, dst, {});
     }
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Read(cl_command_queue queue, T* dst, const std::vector<cl_event>& waits) const
     {
         return this->Read(queue, 0, this->Length(), dst, waits);
     }
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Read(cl_command_queue queue, size_t offset, size_t length, T* dst) const
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Read(queue, offset, length, dst, {});
     }
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Read(cl_command_queue queue, size_t offset, size_t length, T* dst, const std::vector<cl_event>& waits) const
     {
         return this->Read(queue, offset, 0, 0, length, 1, 1, dst, 0, 0, 0, 0, 0, waits);
     }
 
     // Read 2d
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     bool Read(cl_command_queue queue, T* dst) const
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Read(queue, dst, {});
     }
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     bool Read(cl_command_queue queue, T* dst, const std::vector<cl_event>& waits) const
     {
         return this->Read(queue, 0, 0, this->width, this->height, dst, 0, 0, 0);
     }
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     bool Read(cl_command_queue queue, size_t srcX, size_t srcY, size_t width, size_t height, T* dst,
               size_t dstX, size_t dstY, size_t pitch) const
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Read(queue, srcX, srcY, width, height, dst, dstX, dstY, pitch, {});
     }
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     bool Read(cl_command_queue queue, size_t srcX, size_t srcY, size_t width, size_t height, T* dst,
               size_t dstX, size_t dstY, size_t pitch, const std::vector<cl_event>& waits) const
     {
@@ -495,18 +495,18 @@ public:
     }
 
     // Read 3d
-    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, T>::type* = 0>
     bool Read(cl_command_queue queue, T* dst) const
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Read(queue, dst, {});
     }
-    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, T>::type* = 0>
     bool Read(cl_command_queue queue, T* dst, const std::vector<cl_event>& waits) const
     {
         return this->Read(queue, 0, 0, 0, this->width, this->height, this->depth, dst, 0, 0, 0, 0, 0, waits);
     }
-    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, T>::type* = 0>
     bool Read(cl_command_queue queue, size_t srcX, size_t srcY, size_t srcZ, size_t width, size_t height, size_t depth, T* dst,
               size_t dstX, size_t dstY, size_t dstZ, size_t pitch, size_t slice, const std::vector<cl_event>& waits) const
     {
@@ -557,49 +557,49 @@ public:
 
     // Async write may not working on Intel platform. clEnqueueWriteBufferRect seems cannot handle wait list properly.
     // Write 1d
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Write(cl_command_queue queue, const T* src)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Write(queue, src, {});
     }
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Write(cl_command_queue queue, const T* src, const std::vector<cl_event>& waits)
     {
         return this->Write(queue, 0, this->Length(), src, waits);
     }
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Write(cl_command_queue queue, size_t offset, size_t length, const T* src)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Write(queue, offset, length, src, {});
     }
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     bool Write(cl_command_queue queue, size_t offset, size_t length, const T* src, const std::vector<cl_event>& waits)
     {
         return this->Write(queue, offset, 0, 0, length, 1, 1, src, 0, 0, 0, 0, 0, waits);
     }
 
     // Write 2d
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     bool Write(cl_command_queue queue, const T* src)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Write(queue, src, {});
     }
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     bool Write(cl_command_queue queue, const T* src, const std::vector<cl_event>& waits)
     {
         return this->Write(queue, 0, 0, this->width, this->height, src, 0, 0, 0, waits);
     }
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     bool Write(cl_command_queue queue, size_t dstX, size_t dstY, size_t width, size_t height, const T* src,
                size_t srcX, size_t srcY, size_t pitch)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Write(queue, dstX, dstY, width, height, src, srcX, srcY, pitch, {});
     }
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     bool Write(cl_command_queue queue, size_t dstX, size_t dstY, size_t width, size_t height, const T* src,
                size_t srcX, size_t srcY, size_t pitch, const std::vector<cl_event>& waits)
     {
@@ -607,18 +607,18 @@ public:
     }
 
     // Write 3d
-    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, T>::type* = 0>
     bool Write(cl_command_queue queue, const T* src)
     {
         ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Write(queue, src, {});
     }
-    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, T>::type* = 0>
     bool Write(cl_command_queue queue, const T* src, const std::vector<cl_event>& waits)
     {
         return this->Write(queue, 0, 0, 0, this->width, this->height, this->depth, src, 0, 0, 0, 0, 0);
     }
-    template<size_t Dim = D, typename std::enable_if<3 == Dim, bool>::type = 0>
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, T>::type* = 0>
     bool Write(cl_command_queue queue, size_t dstX, size_t dstY, size_t dstZ, size_t width, size_t height, size_t depth, const T* src,
                size_t srcX, size_t srcY, size_t srcZ, size_t pitch, size_t slice)
     {
@@ -627,7 +627,7 @@ public:
     }
 
     // Create functions
-    template<size_t Dim = D, typename std::enable_if<1 == Dim, CLBuffer<T, 1>>::type* = 0>
+    template<size_t Dim = D, typename std::enable_if<1 == Dim, T>::type* = 0>
     static CLBuffer<T, 1> Create(cl_context context, int32_t flags, size_t length)
     {
         cl_mem_flags mflags;
@@ -666,7 +666,7 @@ public:
         return CLBuffer<T, 1>(buffer, error, length, 1, 1, length * sizeof(T), length * sizeof(T));
     }
 
-    template<size_t Dim = D, typename std::enable_if<2 == Dim, CLBuffer<T, 2>>::type* = 0>
+    template<size_t Dim = D, typename std::enable_if<2 == Dim, T>::type* = 0>
     static CLBuffer<T, 2> Create(cl_context context, int32_t flags, size_t width, size_t height, size_t pitch = 0)
     {
         cl_mem_flags mflags;
@@ -711,7 +711,7 @@ public:
         return CLBuffer<T, 2>(buffer, error, width, height, 1, pitch, height * pitch);
     }
 
-    template<size_t Dim = D, typename std::enable_if<3 == Dim, CLBuffer<T, 3>>::type* = 0>
+    template<size_t Dim = D, typename std::enable_if<3 == Dim, T>::type* = 0>
     static CLBuffer<T, 3> Create(cl_context context, int32_t flags, size_t width, size_t height, size_t depth, size_t pitch = 0, size_t slice = 0)
     {
         cl_mem_flags mflags;
