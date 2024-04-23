@@ -1,6 +1,6 @@
 #pragma once
 
-template<typename T>
+template<typename T = char>
 struct CLLocal
 {
     CLLocal(size_t count) : Size(count * sizeof(T)) {}
