@@ -1,8 +1,9 @@
 #pragma once
 
+template<typename T>
 struct CLLocal
 {
-    CLLocal(size_t size) : Size(size) {}
+    CLLocal(size_t count) : Size(count * sizeof<T>) {}
 
     size_t Size;
 };

@@ -158,13 +158,14 @@ public:
     }
 
 protected:
-    bool SetArgs(cl_uint index, const CLLocal& local)
+    template<typename T>
+    bool SetArgs(cl_uint index, const CLLocal<T>& local)
     {
         this->err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
         return CL_SUCCESS == this->err;
     }
-    template<typename... Tx>
-    bool SetArgs(cl_uint index, const CLLocal& local, const Tx&... args)
+    template<typename T, typename... Tx>
+    bool SetArgs(cl_uint index, const CLLocal<T>& local, const Tx&... args)
     {
         this->err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
         if (CL_SUCCESS != this->err)
