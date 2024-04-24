@@ -4,6 +4,9 @@
 #include <mutex>
 
 #define ASSERT(o) if (!o || 0 != o.Error()) return -1
+#define DIVUP(a, b) ((a + b - 1) / b)
+#define PITCH(var)  (cl_uint)(var.Pitch())
+#define SLICE(var)  (cl_uint)(var.Slice())
 
 using namespace std;
 
@@ -851,6 +854,54 @@ int Test::KernelBtsort()
         {
             return -1;
         }
+    }
+
+    return 0;
+}
+
+int Test::KernelSumup()
+{
+    if (!*this || !this->CreateProgram())
+    {
+        return -1;
+    }
+
+    auto sumup = this->program.CreateKernel("sumup");
+    ASSERT(sumup);
+
+    const size_t width  = 50;
+    const size_t height = 50;
+
+    auto ones = CLBuff2D<int>::Create(this->context, CLFlags::RO, width, height);
+    if (!ones.Write(this->queue, vector<int>(ones.Width() * ones.Height(), 1).data()))
+    {
+        return -1;
+    }
+
+    const size_t cols = 8;
+    const size_t rows = 8;
+    size_t xgroups = DIVUP(ones.Width(),  cols);
+    size_t ygroups = DIVUP(ones.Height(), rows);
+    auto sumups = CLBuffer<int>::Create(this->context, CLFlags::WO, xgroups * ygroups);
+
+    sumup.Args(ones, PITCH(ones), (cl_uint)ones.Width(), (cl_uint)ones.Height(), sumups, CLLocal<int>(cols * rows));
+    sumup.Size({ xgroups * cols, ygroups * rows }, { cols, rows });
+    if (!sumup.Execute(this->queue))
+    {
+        return -1;
+    }
+
+    auto map = sumups.Map(this->queue, CLFlags::RO);
+
+    int sum = 0;
+    for (size_t i = 0; i < sumups.Length(); i++)
+    {
+        sum += map[i];
+    }
+
+    if (width * height != sum)
+    {
+        return -1;
     }
 
     return 0;

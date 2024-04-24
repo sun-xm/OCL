@@ -19,6 +19,7 @@ public:
     int ImageReadWrite();
     int KernelExecute();
     int KernelBtsort();
+    int KernelSumup();
     int EventMapCopy();
     int EventReadWrite();
     int EventExecute();
