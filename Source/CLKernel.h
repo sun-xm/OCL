@@ -158,16 +158,36 @@ public:
     }
 
 protected:
-    template<typename T>
-    bool SetArgs(cl_uint index, const CLLocal<T>& local)
+    template<typename T0>
+    bool SetArgs(cl_uint index, const T0& arg0)
     {
-        this->err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
+        this->err = clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
         return CL_SUCCESS == this->err;
     }
-    template<typename T, typename... Tx>
-    bool SetArgs(cl_uint index, const CLLocal<T>& local, const Tx&... args)
+    template<typename T0, typename... Tx>
+    bool SetArgs(cl_uint index, const T0& arg0, const Tx&... args)
     {
-        this->err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
+        this->err = clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
+        if (CL_SUCCESS != this->err)
+        {
+            return false;
+        }
+
+        return this->SetArgs(index + 1, args...);
+    }
+
+    template<typename T, size_t D>
+    bool SetArgs(cl_uint index, const CLBuffer<T, D>& buffer)
+    {
+        auto  mem = (cl_mem)buffer;
+        this->err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
+        return CL_SUCCESS == this->err;
+    }
+    template<typename T, size_t D, typename... Tx>
+    bool SetArgs(cl_uint index, const CLBuffer<T, D>& buffer, const Tx&... args)
+    {
+        auto  mem = (cl_mem)buffer;
+        this->err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
         if (CL_SUCCESS != this->err)
         {
             return false;
@@ -196,58 +216,15 @@ protected:
     }
 
     template<typename T>
-    bool SetArgs(cl_uint index, const CLBuffer<T>& buffer)
+    bool SetArgs(cl_uint index, const CLLocal<T>& local)
     {
-        auto  mem = (cl_mem)buffer;
-        this->err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
+        this->err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
         return CL_SUCCESS == this->err;
     }
     template<typename T, typename... Tx>
-    bool SetArgs(cl_uint index, const CLBuffer<T>& buffer, const Tx&... args)
+    bool SetArgs(cl_uint index, const CLLocal<T>& local, const Tx&... args)
     {
-        auto  mem = (cl_mem)buffer;
-        this->err = clSetKernelArg(this->kernel, index, sizeof(mem), &mem);
-        if (CL_SUCCESS != this->err)
-        {
-            return false;
-        }
-
-        return this->SetArgs(index + 1, args...);
-    }
-
-    template<typename T>
-    bool SetArgs(cl_uint index, const CLBuff2D<T>& buffer)
-    {
-        return this->SetArgs(index, (const CLBuffer<T>&)buffer);
-    }
-    template<typename T, typename... Tx>
-    bool SetArgs(cl_uint index, const CLBuff2D<T>& buffer, const Tx&... args)
-    {
-        return this->SetArgs(index, (const CLBuffer<T>&)buffer, args...);
-    }
-
-    template<typename T>
-    bool SetArgs(cl_uint index, const CLBuff3D<T>& buffer)
-    {
-        return this->SetArgs(index, (const CLBuffer<T>&)buffer);
-    }
-    template<typename T, typename... Tx>
-    bool SetArgs(cl_uint index, const CLBuff3D<T>& buffer, const Tx&... args)
-    {
-        return this->SetArgs(index, (const CLBuffer<T>&)buffer, args...);
-    }
-
-    template<typename T0>
-    bool SetArgs(cl_uint index, const T0& arg0)
-    {
-        this->err = clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
-        return CL_SUCCESS == this->err;
-    }
-
-    template<typename T0, typename... Tx>
-    bool SetArgs(cl_uint index, const T0& arg0, const Tx&... args)
-    {
-        this->err = clSetKernelArg(this->kernel, index, sizeof(arg0), &arg0);
+        this->err = clSetKernelArg(this->kernel, index, local.Size, nullptr);
         if (CL_SUCCESS != this->err)
         {
             return false;
