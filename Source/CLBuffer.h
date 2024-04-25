@@ -133,21 +133,7 @@ public:
     }
     CLMemMap<T> Map(cl_command_queue queue, int32_t flags, const std::vector<cl_event>& waits)
     {
-        size_t length;
-        if (!this->pitch)
-        {
-            length = this->width;
-        }
-        else if (!this->slice)
-        {
-            length = this->height * this->pitch;
-        }
-        else
-        {
-            length = this->depth * this->slice;
-        }
-
-        return this->Map(queue, flags, 0, length, {});
+        return this->MapBytes(queue, flags, 0, this->depth * this->slice, {});
     }
     CLMemMap<T> Map(cl_command_queue queue, int32_t flags, size_t offset, size_t length)
     {
@@ -156,42 +142,7 @@ public:
     }
     CLMemMap<T> Map(cl_command_queue queue, int32_t flags, size_t offset, size_t length, const std::vector<cl_event>& waits)
     {
-        if (!this->mem)
-        {
-            return CLMemMap<T>();
-        }
-
-        cl_map_flags mflags = 0;
-        if (CLFlags::RO & flags)
-        {
-            mflags |= CL_MAP_READ;
-        }
-        if (CLFlags::WO & flags)
-        {
-            mflags |= CL_MAP_WRITE;
-        }
-
-        std::vector<cl_event> events;
-        for (auto& e : waits)
-        {
-            if (e)
-            {
-                events.push_back(e);
-            }
-        }
-
-        cl_event event;
-        auto map = clEnqueueMapBuffer(queue, this->mem, CL_FALSE, mflags, offset * sizeof(T), length * sizeof(T), (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &this->err);
-
-        if (CL_SUCCESS != this->err)
-        {
-            return CLMemMap<T>();
-        }
-
-        this->evt = CLEvent(event);
-        clReleaseEvent(event);
-
-        return CLMemMap<T>(this->mem, queue, event, map);
+        return this->MapBytes(queue, flags, offset * sizeof(T), length * sizeof(T), waits);
     }
 
     // General copy
@@ -759,6 +710,47 @@ public:
 
         ONCLEANUP(buffer, [buffer]{ if(buffer) clReleaseMemObject(buffer); });
         return CLBuffer<T, 3>(buffer, error, width, height, depth, pitch, slice);
+    }
+
+protected:
+    CLMemMap<T> MapBytes(cl_command_queue queue, int32_t flags, size_t offsetInBytes, size_t sizeInBytes, const std::vector<cl_event>& waits)
+    {
+        if (!this->mem)
+        {
+            return CLMemMap<T>();
+        }
+
+        cl_map_flags mflags = 0;
+        if (CLFlags::RO & flags)
+        {
+            mflags |= CL_MAP_READ;
+        }
+        if (CLFlags::WO & flags)
+        {
+            mflags |= CL_MAP_WRITE;
+        }
+
+        std::vector<cl_event> events;
+        for (auto& e : waits)
+        {
+            if (e)
+            {
+                events.push_back(e);
+            }
+        }
+
+        cl_event event;
+        auto map = clEnqueueMapBuffer(queue, this->mem, CL_FALSE, mflags, offsetInBytes, sizeInBytes, (cl_uint)events.size(), events.size() ? events.data() : nullptr, &event, &this->err);
+
+        if (CL_SUCCESS != this->err)
+        {
+            return CLMemMap<T>();
+        }
+
+        this->evt = CLEvent(event);
+        clReleaseEvent(event);
+
+        return CLMemMap<T>(this->mem, queue, event, map);
     }
 
 protected:
