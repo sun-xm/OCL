@@ -120,6 +120,15 @@ public:
         return ((T*)this->map)[index];
     }
 
+    operator T*()
+    {
+        return (T*)this->map;
+    }
+    operator const T*() const
+    {
+        return (const T*)this->map;
+    }
+
     operator bool() const
     {
         return !!this->mem;
