@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CLCommon.h"
+#include "CLContext.h"
 #include "CLFlags.h"
 #include "CLMemMap.h"
 #include <cstdint>
@@ -258,7 +259,7 @@ public:
     bool Copy(cl_command_queue queue, const CLBuffer<T, 3>& src, size_t srcX, size_t srcY, size_t srcZ,
               size_t width, size_t height, size_t depth, size_t dstX, size_t dstY, size_t dstZ)
     {
-        ONCLENAUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
+        ONCLEANUP(wait, [this]{ if (CL_SUCCESS == this->err) this->Wait(); });
         return this->Copy(queue, srcX, srcY, srcZ, width, height, depth, dstX, dstY, dstZ, {});
     }
 

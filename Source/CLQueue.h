@@ -1,6 +1,7 @@
 #pragma once
 
-#include "CLKernel.h"
+#include "CLCommon.h"
+#include <CL/cl.h>
 
 class CLQueue
 {

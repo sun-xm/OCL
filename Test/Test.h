@@ -2,6 +2,8 @@
 
 #include "CLContext.h"
 #include "CLFlags.h"
+#include "CLProgram.h"
+#include "CLQueue.h"
 
 class Test
 {

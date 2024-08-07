@@ -1,4 +1,7 @@
 #include "Test.h"
+#include <CLBuffer.h>
+#include <CLImage.h>
+#include <CLKernel.h>
 #include <fstream>
 #include <random>
 #include <mutex>
@@ -51,7 +54,7 @@ Test::Test()
     this->context = CLContext::CreateDefault();
     if (this->context)
     {
-        this->queue = this->context.CreateQueue();
+        this->queue = CLQueue::Create(this->context);
     }
 }
 
@@ -761,7 +764,7 @@ int Test::KernelExecute()
         return -1;
     }
 
-    auto copy = this->program.CreateKernel("copyIntArray");
+    auto copy = CLKernel::Create(this->program, "copyIntArray");
     if (!copy)
     {
         return -1;
@@ -821,7 +824,7 @@ int Test::KernelBtsort()
     }
     map.Unmap();
 
-    auto btsort = this->program.CreateKernel("btsort");
+    auto btsort = CLKernel::Create(this->program, "btsort");
     if (!btsort)
     {
         return -1;
@@ -866,7 +869,7 @@ int Test::KernelSumup()
         return -1;
     }
 
-    auto sumup = this->program.CreateKernel("sumup");
+    auto sumup = CLKernel::Create(this->program, "sumup");
     ASSERT(sumup);
 
     const size_t width  = 50;
@@ -1050,7 +1053,7 @@ int Test::EventExecute()
         return -1;
     }
 
-    auto copy = this->program.CreateKernel("copyIntArray");
+    auto copy = CLKernel::Create(this->program, "copyIntArray");
     if (!copy)
     {
         return -1;
@@ -1105,13 +1108,13 @@ int Test::ProgramBinary()
     vector<cl_int> status;
     ifstream in("binary.bin", ios::binary);
 
-    this->program = this->context.LoadProgram(in, log, &status);
+    this->program = CLProgram::Load(this->context, in, log, &status);
     if (!this->program)
     {
         return -1;
     }
 
-    auto kernel = this->program.CreateKernel("btsort");
+    auto kernel = CLKernel::Create(this->program, "btsort");
     if (!kernel)
     {
         return -1;
@@ -1134,7 +1137,7 @@ bool Test::CreateProgram()
     }
 
     string log;
-    this->program = this->context.CreateProgram(string(istreambuf_iterator<char>(file), istreambuf_iterator<char>()).c_str(), "", log);
+    this->program = CLProgram::Create(this->context, string(istreambuf_iterator<char>(file), istreambuf_iterator<char>()).c_str(), "", log);
 
     return !!this->program;
 }

@@ -16,5 +16,9 @@ find_library(OPENCL NAMES OpenCL PATHS ${LIB_DIR} REQUIRED)
 
 add_compile_definitions(CL_TARGET_OPENCL_VERSION=220)
 
+if(MSVC AND MSVC_VERSION GREATER_EQUAL 1910)
+    add_compile_options(/permissive-)
+endif()
+
 enable_testing()
 add_subdirectory(Test Test)
