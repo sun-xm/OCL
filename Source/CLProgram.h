@@ -320,7 +320,7 @@ public:
             stream.read((char*)&binary[0], binary.size());
             if (!stream)
             {
-                return false;
+                return CLProgram();
             }
             binaries.push_back(std::move(binary));
         }
