@@ -1,6 +1,5 @@
 #pragma once
 
-#include "CLCommon.h"
 #include "CLContext.h"
 #include "CLFlags.h"
 #include "CLMemMap.h"
