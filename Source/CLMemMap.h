@@ -120,16 +120,14 @@ public:
         return ((T*)this->map)[index];
     }
 
-    // Ambiguous operator[] error in ndk
-    // https://github.com/llvm/llvm-project/issues/110086
-    // operator T*()
-    // {
-    //     return (T*)this->map;
-    // }
-    // operator const T*() const
-    // {
-    //     return (const T*)this->map;
-    // }
+    operator T*()
+    {
+        return (T*)this->map;
+    }
+    operator const T*() const
+    {
+        return (const T*)this->map;
+    }
 
     operator bool() const
     {
