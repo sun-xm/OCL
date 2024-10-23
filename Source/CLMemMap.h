@@ -120,6 +120,16 @@ public:
         return ((T*)this->map)[index];
     }
 
+    // Cater for stupid clang
+    T& operator[](int index)
+    {
+        return ((T*)this->map)[index];
+    }
+    const T& operator[](int index) const
+    {
+        return ((T*)this->map)[index];
+    }
+
     operator T*()
     {
         return (T*)this->map;
