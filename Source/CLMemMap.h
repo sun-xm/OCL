@@ -120,7 +120,7 @@ public:
         return ((T*)this->map)[index];
     }
 
-    // Cater for stupid clang
+#if defined(__clang__) && defined(__ARM_ARCH_7A__)
     T& operator[](int index)
     {
         return ((T*)this->map)[index];
@@ -129,6 +129,7 @@ public:
     {
         return ((T*)this->map)[index];
     }
+#endif
 
     operator T*()
     {
