@@ -2,6 +2,7 @@
 
 #include "CLCommon.h"
 #include <iostream>
+#include <cstring>
 #include <string>
 
 class CLProgram
