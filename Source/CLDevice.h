@@ -9,6 +9,13 @@ class CLDevice
 public:
     CLDevice(cl_device_id id) : id(id) {}
 
+    cl_device_type Type() const
+    {
+        cl_device_type type;
+        this->Info(CL_DEVICE_TYPE, type);
+        return type;
+    }
+
     std::string Name() const
     {
         std::string name;
@@ -48,9 +55,15 @@ public:
 
     bool ImageSupport() const
     {
-        bool support;
+        cl_bool support;
         this->Info(CL_DEVICE_IMAGE_SUPPORT, support);
-        return support;
+        return support ? true : false;
+    }
+    bool UnifiedMemory() const
+    {
+        cl_bool unified;
+        this->Info(CL_DEVICE_HOST_UNIFIED_MEMORY, unified);
+        return unified ? true : false;
     }
 
     size_t MaxWorkGroupSize() const

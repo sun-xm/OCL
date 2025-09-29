@@ -100,19 +100,45 @@ public:
     }
     static CLContext CreateDefault()
     {
-        auto platforms = CLPlatform::Platforms();
-        if (platforms.empty())
+        CLDevice selected(0);
+
+        for (auto& platform : CLPlatform::Platforms())
         {
-            return CLContext();
+            for (auto& device : platform.Devices())
+            {
+                switch (device.Type())
+                {
+                    case CL_DEVICE_TYPE_GPU:
+                    {
+                        if (selected && CL_DEVICE_TYPE_GPU == selected.Type())
+                        {
+                            if (selected.UnifiedMemory() && !device.UnifiedMemory())
+                            {
+                                selected = device;
+                            }
+                        }
+                        else
+                        {
+                            selected = device;
+                        }
+                        break;
+                    }
+
+                    case CL_DEVICE_TYPE_CPU:
+                    {
+                        if (!selected)
+                        {
+                            selected = device;
+                        }
+                        break;
+                    }
+
+                    default: break;
+                }
+            }
         }
 
-        auto devices = platforms[0].Devices();
-        if (devices.empty())
-        {
-            return CLContext();
-        }
-
-        return Create(devices[0]);
+        return selected ? Create(selected) : CLContext();
     }
 
 protected:
